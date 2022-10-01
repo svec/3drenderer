@@ -53,7 +53,7 @@ void process_input(void)
 		    is_running = false;
 			break;
 		case SDL_KEYDOWN:
-		    if (event.key.keysym.sym = SDLK_ESCAPE) {
+		    if (event.key.keysym.sym == SDLK_ESCAPE) {
 				is_running = false;
 			}
 			break;
