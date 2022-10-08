@@ -50,16 +50,19 @@ bool initialize_window(void)
     return true;
 }
 
-void set_color_buffer_pixel_color(int x, int y, uint32_t color)
+void draw_pixel(int x, int y, uint32_t color)
 {
-	color_buffer[(window_width * y) + x] = color;
+	if (    (x >= 0) && (x < window_width)
+	     && (y >= 0) && (y < window_height)) {
+		color_buffer[(window_width * y) + x] = color;
+	}
 }
 
 void clear_color_buffer(uint32_t color)
 {
     for (int y = 0; y < window_height; y++) {
 		for (int x = 0; x < window_width; x++) {
-			set_color_buffer_pixel_color(x, y, color);
+			draw_pixel(x, y, color);
 		}
 	}
 }
@@ -88,7 +91,7 @@ void draw_grid(void)
 
 	for (int x=0; x < window_width; x += x_incr) {
 		for (int y=0; y < window_height; y += y_incr) {
-			set_color_buffer_pixel_color(x, y, color);
+			draw_pixel(x, y, color);
 		}
 	}
 }
@@ -97,7 +100,7 @@ void draw_rect(int rect_x, int rect_y, int width, int height, uint32_t color)
 {
     for (int x = rect_x; x < (rect_x + width); x++) {
 		for (int y = rect_y; y < (rect_y + height); y++) {
-			set_color_buffer_pixel_color(x, y, color);
+			draw_pixel(x, y, color);
 		}
 	}
 }
