@@ -139,20 +139,13 @@ void draw_grid(void)
 {
 	const int x_incr = 10;
 	const int y_incr = 10;
-	const uint32_t color = 0xFF000000;
+	const uint32_t color = 0xFF555555;
 
 	for (int x=0; x < window_width; x += x_incr) {
-		for (int y=0; y < window_height; y++) {
+		for (int y=0; y < window_height; y += y_incr) {
 			set_color_buffer_pixel_color(x, y, color);
 		}
 	}
-
-	for (int y=0; y < window_height; y += y_incr) {
-		for (int x=0; x < window_width; x++) {
-			set_color_buffer_pixel_color(x, y, color);
-		}
-	}
-
 }
 
 void render(void)
@@ -164,7 +157,7 @@ void render(void)
 
     render_color_buffer();
 
-	clear_color_buffer(0xFFFFFF00);
+	clear_color_buffer(0xFF000000);
 
 	SDL_RenderPresent(renderer);
 }
