@@ -10,8 +10,8 @@ SDL_Texture * color_buffer_texture = NULL;
 uint32_t * color_buffer = NULL;
 
 bool is_running = false;
-const int window_width = 800;
-const int window_height = 600;
+int window_width = 800;
+int window_height = 600;
 
 
 bool initialize_window(void)
@@ -20,6 +20,13 @@ bool initialize_window(void)
 		fprintf(stderr, "Error: SDL_Init() failed\n");
 		return false;
 	}
+
+	// Query SDL for max fullscreen resolution.
+	SDL_DisplayMode display_mode;
+	SDL_GetCurrentDisplayMode(0, &display_mode);
+
+	window_width = display_mode.w;
+	window_height = display_mode.h;
 
 	// Create SDL window at the center of the screen.
 	window = SDL_CreateWindow(
@@ -104,8 +111,8 @@ void set_color_buffer_pixel_color(int x, int y, uint32_t color)
 
 void clear_color_buffer(uint32_t color)
 {
-    for (uint32_t y = 0; y < window_height; y++) {
-		for (uint32_t x = 0; x < window_width; x++) {
+    for (int y = 0; y < window_height; y++) {
+		for (int x = 0; x < window_width; x++) {
 			set_color_buffer_pixel_color(x, y, color);
 		}
 	}
