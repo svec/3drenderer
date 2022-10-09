@@ -5,6 +5,10 @@
 #include "display.h"
 #include "gfx-vector.h"
 
+const int CUBE_N_POINTS = 9*9*9; // 9 points in each dimension
+
+vec3_t cube_points[CUBE_N_POINTS];
+
 bool is_running = false;
 
 bool setup(void)
@@ -28,6 +32,18 @@ bool setup(void)
     if (! color_buffer_texture) {
 		fprintf(stderr, "Error: SDL_CreateTexture failed\n");
 		return false;
+	}
+
+	// Setup cube, centered at 0,0,0, each side is length 2 (from -1 to +1).
+	// Each point is 0.25 off from the other (CUBE_N_POINTS per dimension = 9).
+	int point_count = 0;
+	for (float x = -1.0; x < 1; x += 0.25) {
+		for (float y = -1.0; y < 1; y += 0.25) {
+			for (float z = -1.0; z < 1; z += 0.25) {
+				vec3_t new_point = {x,y,z};
+				cube_points[point_count++] = new_point;
+			}
+		}
 	}
 
 	return true;
