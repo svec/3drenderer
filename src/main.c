@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <SDL2/SDL.h>
 #include "display.h"
+#include "gfx-vector.h"
 
 bool is_running = false;
 
@@ -63,6 +64,11 @@ void render(void)
 	SDL_RenderClear(renderer);
 
     draw_grid();
+
+    draw_pixel(10,10,0xFFFFFF00);
+    draw_pixel(11,10,0xFFFFFF00);
+    draw_pixel(10,11,0xFFFFFF00);
+    draw_pixel(11,11,0xFFFFFF00);
 
 	draw_rect(20,30,100,150, 0xFFFF0000);
 
