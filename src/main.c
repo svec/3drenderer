@@ -11,6 +11,8 @@ vec3_t cube_points[CUBE_N_POINTS];
 vec2_t projected_points[CUBE_N_POINTS];
 float fov_factor = 128;
 
+vec3_t camera_position = { .x = 0, .y = 0, .z = -5};
+
 bool is_running = false;
 
 bool setup(void)
@@ -74,11 +76,12 @@ void process_input(void)
 // Project a 3D point (our 3D space) into a 2D point (for the 2D screen).
 vec2_t project(vec3_t point3d)
 {
-	// Simple orthographic projection: ignore the z, just use the x and y.
+	// Simple perspective divide projection: 
+	//     Divide by z, so things that are further away (larger z) are smaller.
 	// Scale by fov_factor.
 	vec2_t projected_point = {
-		.x = (fov_factor * point3d.x),
-		.y = (fov_factor * point3d.y)
+		.x = (fov_factor * point3d.x) / point3d.z,
+		.y = (fov_factor * point3d.y) / point3d.z
 	};
 	return projected_point;
 }
@@ -87,6 +90,9 @@ void update(void)
 {
 	for (int ii = 0; ii < CUBE_N_POINTS; ii++) {
 		vec3_t point3d = cube_points[ii];
+
+        // Move the points away from the camera.
+        point3d.z = point3d.z - camera_position.z;
 
         // Project the current 3D point into 2D space.
 		vec2_t projected_point = project(point3d);
