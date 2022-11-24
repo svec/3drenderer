@@ -9,7 +9,7 @@ const int CUBE_N_POINTS = 9*9*9; // 9 points in each dimension
 
 vec3_t cube_points[CUBE_N_POINTS];
 vec2_t projected_points[CUBE_N_POINTS];
-float fov_factor = 128;
+float fov_factor = 640;
 
 vec3_t camera_position = { .x = 0, .y = 0, .z = -5};
 
