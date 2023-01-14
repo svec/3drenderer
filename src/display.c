@@ -9,6 +9,8 @@ uint32_t * color_buffer = NULL;
 int window_width = 800;
 int window_height = 600;
 
+bool use_fullscreen = false;
+
 bool initialize_window(void)
 {
 	if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
@@ -20,10 +22,13 @@ bool initialize_window(void)
 	SDL_DisplayMode display_mode;
 	SDL_GetCurrentDisplayMode(0, &display_mode);
 
-	//window_width = 800;
-	//window_height = 600;
 	window_width = display_mode.w;
 	window_height = display_mode.h;
+
+	if (! use_fullscreen) {
+		window_width = 800;
+		window_height = 600;
+	}
 
 	// Create SDL window at the center of the screen.
 	window = SDL_CreateWindow(
@@ -47,7 +52,9 @@ bool initialize_window(void)
 		return false;
 	}
 
-	SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);
+    if (use_fullscreen) {
+	    SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);
+	}
 
     return true;
 }

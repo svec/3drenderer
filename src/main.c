@@ -11,6 +11,8 @@ vec3_t cube_points[CUBE_N_POINTS];
 vec2_t projected_points[CUBE_N_POINTS];
 float fov_factor = 640;
 
+int previous_frame_time = 0;
+
 vec3_t camera_position = { .x = 0, .y = 0, .z = -5};
 vec3_t cube_rotation = {0, 0, 0};
 
@@ -89,6 +91,12 @@ vec2_t project(vec3_t point3d)
 
 void update(void)
 {
+    // Delay until it's time for the next frame.
+	while (! SDL_TICKS_PASSED(SDL_GetTicks(), previous_frame_time + FRAME_TARGET_TIME))
+	    ; // busy wait
+
+    // How many ms have passed since we last were called?
+    previous_frame_time = SDL_GetTicks();
 
     // Rotate the cube by a little bit in the y direction each frame.
 	cube_rotation.x += 0.01;
