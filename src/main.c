@@ -91,9 +91,13 @@ vec2_t project(vec3_t point3d)
 
 void update(void)
 {
-    // Delay until it's time for the next frame.
-	while (! SDL_TICKS_PASSED(SDL_GetTicks(), previous_frame_time + FRAME_TARGET_TIME))
-	    ; // busy wait
+	// Do we need to delay before updating the frame?
+	int time_to_wait_ms = FRAME_TARGET_TIME_MS - (SDL_GetTicks() - previous_frame_time);
+
+    if ((time_to_wait_ms > 0) && (time_to_wait_ms <= FRAME_TARGET_TIME_MS)) {
+		// Delay until it's time for the next frame.
+		SDL_Delay(time_to_wait_ms);
+	}
 
     // How many ms have passed since we last were called?
     previous_frame_time = SDL_GetTicks();
