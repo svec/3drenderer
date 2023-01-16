@@ -5,10 +5,6 @@
 #include "display.h"
 #include "gfx-vector.h"
 
-const int CUBE_N_POINTS = 9*9*9; // 9 points in each dimension
-
-vec3_t cube_points[CUBE_N_POINTS];
-vec2_t projected_points[CUBE_N_POINTS];
 float fov_factor = 640;
 
 int previous_frame_time = 0;
@@ -39,18 +35,6 @@ bool setup(void)
     if (! color_buffer_texture) {
 		fprintf(stderr, "Error: SDL_CreateTexture failed\n");
 		return false;
-	}
-
-	// Setup cube, centered at 0,0,0, each side is length 2 (from -1 to +1).
-	// Each point is 0.25 off from the other (CUBE_N_POINTS per dimension = 9).
-	int point_count = 0;
-	for (float x = -1.0; x <= 1; x += 0.25) {
-		for (float y = -1.0; y <= 1; y += 0.25) {
-			for (float z = -1.0; z <= 1; z += 0.25) {
-				vec3_t new_point = {x,y,z};
-				cube_points[point_count++] = new_point;
-			}
-		}
 	}
 
 	return true;
@@ -107,6 +91,7 @@ void update(void)
 	cube_rotation.y += 0.01;
 	cube_rotation.z += 0.01;
 
+/*
 	for (int ii = 0; ii < CUBE_N_POINTS; ii++) {
 		vec3_t point3d = cube_points[ii];
 
@@ -123,12 +108,14 @@ void update(void)
 		// Save the projected 2D vector into the array of projected points.
 		projected_points[ii] = projected_point;
 	}
+*/
 }
 
 void render(void)
 {
     draw_grid();
 
+/*
 	// Render all projected points.
 	for (int ii=0; ii < CUBE_N_POINTS; ii++) {
 		// Draw each point as a small 4x4 yellow rectangle so we can see it.
@@ -140,6 +127,7 @@ void render(void)
 		    4, 
 			0xFFFFFF00);
 	}
+*/
 
     render_color_buffer();
 
@@ -154,6 +142,7 @@ int main(void) {
 
 	if (! setup()) {
 		// If setup failed, don't run.
+		printf("ERROR: setup failed.\n");
 		is_running = false;
 	}
 
