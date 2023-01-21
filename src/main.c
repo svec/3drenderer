@@ -4,10 +4,14 @@
 #include <SDL2/SDL.h>
 #include "display.h"
 #include "gfx-vector.h"
+#include "mesh.h"
+#include "triangle.h"
 
 float fov_factor = 640;
 
 int previous_frame_time = 0;
+
+triangle_t triangles_to_render[N_MESH_FACES];
 
 vec3_t camera_position = { .x = 0, .y = 0, .z = -5};
 vec3_t cube_rotation = {0, 0, 0};
@@ -91,11 +95,47 @@ void update(void)
 	cube_rotation.y += 0.01;
 	cube_rotation.z += 0.01;
 
+	for (int face_i=0; face_i < N_MESH_FACES; face_i++) {
+		// Handle 1 triangle face per iteration.
+
+		face_t mesh_face = mesh_faces[face_i];
+		vec3_t face_vertices[3];
+		face_vertices[0] = mesh_vertices[mesh_face.a - 1]; // -1 because vertices are 1-indexed
+		face_vertices[1] = mesh_vertices[mesh_face.b - 1]; // -1 because vertices are 1-indexed
+		face_vertices[2] = mesh_vertices[mesh_face.c - 1]; // -1 because vertices are 1-indexed
+
+        triangle_t projected_triangle;
+
+        // For all 3 vertices of this triangle, apply transformations.
+		for (int vertex_i = 0; vertex_i < 3; vertex_i++)
+		{
+			vec3_t transformed_vertex = face_vertices[vertex_i];
+
+			transformed_vertex = vec3_rotate_x(transformed_vertex, cube_rotation.x);
+			transformed_vertex = vec3_rotate_y(transformed_vertex, cube_rotation.y);
+			transformed_vertex = vec3_rotate_z(transformed_vertex, cube_rotation.z);
+
+			// Translate the vertex away from the camera.
+			transformed_vertex.z -= camera_position.z;
+
+            // Project the current vertex.
+			vec2_t projected_point = project(transformed_vertex);
+
+			projected_point.x += (window_width / 2);  // translate to center of window
+			projected_point.y += (window_height / 2); // translate to center of window
+
+			projected_triangle.points[vertex_i] = projected_point;
+		}
+
+        // Saves the projected triangle to the the array of triangles to render.
+		triangles_to_render[face_i] = projected_triangle;
+	}
+
 /*
 	for (int ii = 0; ii < CUBE_N_POINTS; ii++) {
 		vec3_t point3d = cube_points[ii];
 
-        // Transform the point around the y axis.
+        // Transform the point around the axes.
 		vec3_t transformed_point3d = vec3_rotate_x(point3d, cube_rotation.x);
 		transformed_point3d = vec3_rotate_y(transformed_point3d, cube_rotation.y);
 		transformed_point3d = vec3_rotate_z(transformed_point3d, cube_rotation.z);
@@ -114,6 +154,17 @@ void update(void)
 void render(void)
 {
     draw_grid();
+
+	// Loop all projected triansles and render them.
+	for (int ii=0; ii < N_MESH_FACES; ii++) {
+		triangle_t triangle = triangles_to_render[ii];
+
+		// Draw each point as a small 4x4 yellow rectangle so we can see it.
+		draw_rect(triangle.points[0].x, triangle.points[0].y, 3, 3, 0xFFFFFF00);
+		draw_rect(triangle.points[1].x, triangle.points[1].y, 3, 3, 0xFFFFFF00);
+		draw_rect(triangle.points[2].x, triangle.points[2].y, 3, 3, 0xFFFFFF00);
+	}
+    
 
 /*
 	// Render all projected points.
