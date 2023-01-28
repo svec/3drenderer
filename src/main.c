@@ -164,6 +164,7 @@ void render(void)
 		draw_rect(triangle.points[1].x, triangle.points[1].y, 3, 3, 0xFFFFFF00);
 		draw_rect(triangle.points[2].x, triangle.points[2].y, 3, 3, 0xFFFFFF00);
 
+        // Draw the lines for the triangle.
 		draw_triangle(
 			triangle.points[0].x, 
 			triangle.points[0].y, 
