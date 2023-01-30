@@ -6,12 +6,13 @@
 #include "gfx-vector.h"
 #include "mesh.h"
 #include "triangle.h"
+#include "array.h"
 
 float fov_factor = 640;
 
 int previous_frame_time = 0;
 
-triangle_t triangles_to_render[N_MESH_FACES];
+triangle_t *triangles_to_render = NULL;
 
 vec3_t camera_position = { .x = 0, .y = 0, .z = -5};
 vec3_t cube_rotation = {0, 0, 0};
@@ -90,6 +91,9 @@ void update(void)
     // How many ms have passed since we last were called?
     previous_frame_time = SDL_GetTicks();
 
+	// Initialize the array of triangles to render.
+	triangles_to_render = NULL;
+
     // Rotate the cube by a little bit in the y direction each frame.
 	cube_rotation.x += 0.01;
 	cube_rotation.y += 0.01;
@@ -128,7 +132,7 @@ void update(void)
 		}
 
         // Saves the projected triangle to the the array of triangles to render.
-		triangles_to_render[face_i] = projected_triangle;
+		array_push(triangles_to_render, projected_triangle);
 	}
 
 /*
@@ -155,8 +159,11 @@ void render(void)
 {
     draw_grid();
 
-	// Loop all projected triansles and render them.
-	for (int ii=0; ii < N_MESH_FACES; ii++) {
+	// Loop all projected triangles and render them.
+
+	int num_triangles = array_length(triangles_to_render);
+
+	for (int ii=0; ii < num_triangles; ii++) {
 		triangle_t triangle = triangles_to_render[ii];
 
 		// Draw each point as a small 4x4 yellow rectangle so we can see it.
@@ -175,6 +182,10 @@ void render(void)
 			0xFF00FF00
 		);
 	}
+
+	// Now that we've rendered the triagles into the frame buffer, 
+	// clear the triangle array.
+	array_free(triangles_to_render);
 
 /*
 	// Render all projected points.
