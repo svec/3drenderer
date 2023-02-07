@@ -172,25 +172,22 @@ void render(void)
 	// clear the triangle array.
 	array_free(triangles_to_render);
 
-/*
-	// Render all projected points.
-	for (int ii=0; ii < CUBE_N_POINTS; ii++) {
-		// Draw each point as a small 4x4 yellow rectangle so we can see it.
-		vec2_t projected_point = projected_points[ii];
-		draw_rect(
-			projected_point.x + (window_width / 2),  // translate to center of window
-			projected_point.y + (window_height / 2), // translate to center of window
-			4,
-		    4, 
-			0xFFFFFF00);
-	}
-*/
-
     render_color_buffer();
 
 	clear_color_buffer(0xFF000000);
 
 	SDL_RenderPresent(renderer);
+}
+
+void free_resources(void)
+{
+	array_free(mesh.faces);
+	array_free(mesh.vertices);
+
+	if (color_buffer) {
+		free(color_buffer);
+		color_buffer = NULL;
+	}
 }
 
 int main(void) {
@@ -210,5 +207,7 @@ int main(void) {
 	}
 
     destroy_window();
+	free_resources();
+
 	return 0;
 }
