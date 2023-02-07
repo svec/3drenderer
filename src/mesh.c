@@ -1,6 +1,14 @@
+#include <stddef.h>
 #include "gfx-vector.h"
 
 #include "mesh.h"
+#include "array.h"
+
+mesh_t mesh = {
+    .vertices = NULL,
+    .faces = NULL,
+    .rotation = {0, 0, 0}
+};
 
 // Using left hand coordinate system
 //           +y  +z
@@ -64,3 +72,15 @@ face_t cube_faces[N_CUBE_FACES] = {
     {.a = 6, .b = 1, .c = 4},
 
 };
+
+void load_cube_mesh_data(void)
+{
+    for (int ii=0; ii < N_CUBE_VERTICES; ii++) {
+        vec3_t cube_vertex = cube_vertices[ii];
+        array_push(mesh.vertices, cube_vertex);
+    }
+    for (int ii=0; ii < N_CUBE_FACES; ii++) {
+        face_t cube_face = cube_faces[ii];
+        array_push(mesh.faces, cube_face);
+    }
+}

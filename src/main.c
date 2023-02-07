@@ -15,7 +15,6 @@ int previous_frame_time = 0;
 triangle_t *triangles_to_render = NULL;
 
 vec3_t camera_position = { .x = 0, .y = 0, .z = -5};
-vec3_t cube_rotation = {0, 0, 0};
 
 bool is_running = false;
 
@@ -41,6 +40,8 @@ bool setup(void)
 		fprintf(stderr, "Error: SDL_CreateTexture failed\n");
 		return false;
 	}
+
+	load_cube_mesh_data();
 
 	return true;
 }
@@ -95,18 +96,21 @@ void update(void)
 	triangles_to_render = NULL;
 
     // Rotate the cube by a little bit in the y direction each frame.
-	cube_rotation.x += 0.01;
-	cube_rotation.y += 0.01;
-	cube_rotation.z += 0.01;
+	mesh.rotation.x += 0.01;
+	mesh.rotation.y += 0.01;
+	mesh.rotation.z += 0.01;
 
-	for (int face_i=0; face_i < N_MESH_FACES; face_i++) {
+    // Loop all triangle faces.
+	int num_faces = array_length(mesh.faces);
+
+	for (int face_i=0; face_i < num_faces; face_i++) {
 		// Handle 1 triangle face per iteration.
 
-		face_t mesh_face = mesh_faces[face_i];
+		face_t mesh_face = mesh.faces[face_i];
 		vec3_t face_vertices[3];
-		face_vertices[0] = mesh_vertices[mesh_face.a - 1]; // -1 because vertices are 1-indexed
-		face_vertices[1] = mesh_vertices[mesh_face.b - 1]; // -1 because vertices are 1-indexed
-		face_vertices[2] = mesh_vertices[mesh_face.c - 1]; // -1 because vertices are 1-indexed
+		face_vertices[0] = mesh.vertices[mesh_face.a - 1]; // -1 because vertices are 1-indexed
+		face_vertices[1] = mesh.vertices[mesh_face.b - 1]; // -1 because vertices are 1-indexed
+		face_vertices[2] = mesh.vertices[mesh_face.c - 1]; // -1 because vertices are 1-indexed
 
         triangle_t projected_triangle;
 
@@ -115,9 +119,9 @@ void update(void)
 		{
 			vec3_t transformed_vertex = face_vertices[vertex_i];
 
-			transformed_vertex = vec3_rotate_x(transformed_vertex, cube_rotation.x);
-			transformed_vertex = vec3_rotate_y(transformed_vertex, cube_rotation.y);
-			transformed_vertex = vec3_rotate_z(transformed_vertex, cube_rotation.z);
+			transformed_vertex = vec3_rotate_x(transformed_vertex, mesh.rotation.x);
+			transformed_vertex = vec3_rotate_y(transformed_vertex, mesh.rotation.y);
+			transformed_vertex = vec3_rotate_z(transformed_vertex, mesh.rotation.z);
 
 			// Translate the vertex away from the camera.
 			transformed_vertex.z -= camera_position.z;
@@ -134,25 +138,6 @@ void update(void)
         // Saves the projected triangle to the the array of triangles to render.
 		array_push(triangles_to_render, projected_triangle);
 	}
-
-/*
-	for (int ii = 0; ii < CUBE_N_POINTS; ii++) {
-		vec3_t point3d = cube_points[ii];
-
-        // Transform the point around the axes.
-		vec3_t transformed_point3d = vec3_rotate_x(point3d, cube_rotation.x);
-		transformed_point3d = vec3_rotate_y(transformed_point3d, cube_rotation.y);
-		transformed_point3d = vec3_rotate_z(transformed_point3d, cube_rotation.z);
-
-        // Translate the point away from the camera.
-        transformed_point3d.z -= camera_position.z;
-
-        // Project the current 3D point into 2D space.
-		vec2_t projected_point = project(transformed_point3d);
-		// Save the projected 2D vector into the array of projected points.
-		projected_points[ii] = projected_point;
-	}
-*/
 }
 
 void render(void)
