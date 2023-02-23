@@ -1,4 +1,8 @@
 #include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "gfx-vector.h"
 
 #include "mesh.h"
@@ -83,4 +87,69 @@ void load_cube_mesh_data(void)
         face_t cube_face = cube_faces[ii];
         array_push(mesh.faces, cube_face);
     }
+}
+
+bool load_obj_file_data(char * filename)
+{
+    bool all_good = false;
+
+    FILE * fp = fopen(filename, "r");
+    if (fp == NULL) {
+        fprintf(stderr, "Error opening obj file: %s\n", filename);
+        return false;
+    }
+
+    size_t max_line_length = 64;
+    char * line_p = (char *)malloc(sizeof(char) * max_line_length);
+    if (line_p == NULL) {
+        fprintf(stderr, "Error: malloc failed\n");
+        if (fp) {
+            free(fp);
+        }
+        return false;
+    }
+
+    /*
+    We're looking for lines like this (starting at character 0):
+        v -1.000000 -1.000000 1.000000
+
+    or these:
+        f 1/1/1 2/2/1 3/3/1
+        f 1/1 2/2 3/3
+        f 1 2 3
+    
+    Ignore all other lines.
+    */
+    while (1) {
+        size_t ret = getline(&line_p, &max_line_length, fp);
+        printf("ret: %zu\n", ret);
+        if (ret == (size_t)-1) {
+            break;
+        }
+        printf("  max_line_length: %zu line:#%s#\n", max_line_length, line_p);
+
+        if (ret < 3) {
+            continue;
+        }
+
+        if (    ((line_p[0] != 'v') && (line_p[0] != 'f'))
+             || (line_p[1] != ' ')) {
+            continue;
+        }
+
+        for (char *p = strtok(line_p, " "); p != NULL; p = strtok(NULL, " ")) {
+            printf("p: #%s#\n", p);
+        }
+    }
+
+
+    if (line_p) {
+        free(line_p);
+    }
+
+    if (fp) {
+        fclose(fp);
+    }
+
+    return all_good;
 }
