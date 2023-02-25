@@ -97,16 +97,6 @@ bool load_obj_file_data(char * filename)
         return false;
     }
 
-    size_t max_line_length = 64;
-    char * line_p = (char *)malloc(sizeof(char) * max_line_length);
-    if (line_p == NULL) {
-        fprintf(stderr, "Error: malloc failed\n");
-        if (fp) {
-            free(fp);
-        }
-        return false;
-    }
-
     /*
     We're looking for lines like this (starting at character 0):
         v -1.000000 -1.000000 1.000000
@@ -119,77 +109,50 @@ bool load_obj_file_data(char * filename)
     Ignore all other lines.
     */
     bool all_good = true;
-    int vertex_num = 1;
-    int face_num = 1;
+    int vertex_num = 0;
+    int face_num = 0;
     int line_num = 0;
-    while (all_good) {
+    char line[1024];
+
+    while (all_good && fgets(line, 1024, fp)) {
         line_num++;
 
-        size_t ret = getline(&line_p, &max_line_length, fp);
-        //printf("ret: %zu\n", ret);
-        if (ret == (size_t)-1) {
-            break;
-        }
-        printf("  max_line_length: %zu line:#%s#\n", max_line_length, line_p);
-
-        if (ret < 3) {
-            continue;
-        }
-
-        if (    ((line_p[0] != 'v') && (line_p[0] != 'f'))
-             || (line_p[1] != ' ')) {
-            continue;
-        }
-
-        // Line is either a vertex or a face.
-        bool line_type_vertex = (line_p[0] == 'v');
-
-        int data_count = 0;
-        float new_vertex_points[3];
-        int new_face_points[3];
-
-        // Skip past the first two characters.
-        char * tokenizing_string = line_p + 2;
-
-        for (char *p = strtok(tokenizing_string, " "); p != NULL; p = strtok(NULL, " ")) {
-            if (data_count < 3) {
-                if (line_type_vertex) {
-                    float f = strtof(p, NULL);
-                    new_vertex_points[data_count] = f;
-                } else {
-                    int i = strtoul(p, NULL, 10);
-
-                    if (i > vertex_num) {
-                        fprintf(stderr, "Error on line %d: face uses vertex %d, which is not defined.\n", line_num, i);
-                        all_good = false;
-                        break;
-                    }
-                    new_face_points[data_count] = i;
+        if (strncmp(line, "v ", 2) == 0) {
+            vertex_num++;
+            vec3_t vertex;
+            if (sscanf(line, "v %f %f %f", &vertex.x, &vertex.y, &vertex.z) != 3) {
+                fprintf(stderr, "Error reading line %d, expected a vertex line\n", line_num);
+                all_good = false;
+                break;
+            }
+            array_push(mesh.vertices, vertex);
+        } else if (strncmp(line, "f ", 2) == 0) {
+            face_num++;
+            int vertex_indices[3];
+            int texture_indices[3];
+            int normal_indices[3];
+            if (sscanf(line, "f %d/%d/%d %d/%d/%d %d/%d/%d",
+                       &vertex_indices[0], &texture_indices[0], &normal_indices[0], 
+                       &vertex_indices[1], &texture_indices[1], &normal_indices[1], 
+                       &vertex_indices[2], &texture_indices[2], &normal_indices[2]) != 9) {
+                fprintf(stderr, "Error reading line %d, expected a face line\n", line_num);
+                all_good = false;
+                break;
+            }
+            for (int ii=0; ii < 3; ii++) {
+                if (vertex_indices[ii] > vertex_num) { 
+                    fprintf(stderr, "Error on line %d: face uses vertex %d, which is not defined.\n", line_num, vertex_indices[ii]);
+                    all_good = false;
+                    break;
                 }
-                data_count++;
             }
+            face_t face = {
+                .a = vertex_indices[0],
+                .b = vertex_indices[1],
+                .c = vertex_indices[2]
+            };
+            array_push(mesh.faces, face);
         }
-
-        if (all_good && (data_count == 3)) {
-            if (line_type_vertex) {
-                vec3_t v = {.x = new_vertex_points[0], .y = new_vertex_points[1], .z = new_vertex_points[2]};
-                array_push(mesh.vertices, v);
-                printf("vertex # %d: %f %f %f\n", vertex_num, v.x, v.y, v.z);
-                vertex_num++;
-            } else {
-                face_t f = {.a = new_face_points[0], .b = new_face_points[1], .c = new_face_points[2]};
-                array_push(mesh.faces, f);
-                printf("face # %d: %d %d %d\n", face_num, f.a, f.b, f.c);
-                face_num++;
-            }
-        } else {
-            fprintf(stderr, "Error: line %d did not look valid.\n", line_num);
-            all_good = false;
-        }
-    }
-
-    if (line_p) {
-        free(line_p);
     }
 
     if (fp) {
