@@ -91,8 +91,6 @@ void load_cube_mesh_data(void)
 
 bool load_obj_file_data(char * filename)
 {
-    bool all_good = false;
-
     FILE * fp = fopen(filename, "r");
     if (fp == NULL) {
         fprintf(stderr, "Error opening obj file: %s\n", filename);
@@ -120,9 +118,15 @@ bool load_obj_file_data(char * filename)
     
     Ignore all other lines.
     */
-    while (1) {
+    bool all_good = true;
+    int vertex_num = 1;
+    int face_num = 1;
+    int line_num = 0;
+    while (all_good) {
+        line_num++;
+
         size_t ret = getline(&line_p, &max_line_length, fp);
-        printf("ret: %zu\n", ret);
+        //printf("ret: %zu\n", ret);
         if (ret == (size_t)-1) {
             break;
         }
@@ -137,11 +141,52 @@ bool load_obj_file_data(char * filename)
             continue;
         }
 
-        for (char *p = strtok(line_p, " "); p != NULL; p = strtok(NULL, " ")) {
-            printf("p: #%s#\n", p);
+        // Line is either a vertex or a face.
+        bool line_type_vertex = (line_p[0] == 'v');
+
+        int data_count = 0;
+        float new_vertex_points[3];
+        int new_face_points[3];
+
+        // Skip past the first two characters.
+        char * tokenizing_string = line_p + 2;
+
+        for (char *p = strtok(tokenizing_string, " "); p != NULL; p = strtok(NULL, " ")) {
+            if (data_count < 3) {
+                if (line_type_vertex) {
+                    float f = strtof(p, NULL);
+                    new_vertex_points[data_count] = f;
+                } else {
+                    int i = strtoul(p, NULL, 10);
+
+                    if (i > vertex_num) {
+                        fprintf(stderr, "Error on line %d: face uses vertex %d, which is not defined.\n", line_num, i);
+                        all_good = false;
+                        break;
+                    }
+                    new_face_points[data_count] = i;
+                }
+                data_count++;
+            }
+        }
+
+        if (all_good && (data_count == 3)) {
+            if (line_type_vertex) {
+                vec3_t v = {.x = new_vertex_points[0], .y = new_vertex_points[1], .z = new_vertex_points[2]};
+                array_push(mesh.vertices, v);
+                printf("vertex # %d: %f %f %f\n", vertex_num, v.x, v.y, v.z);
+                vertex_num++;
+            } else {
+                face_t f = {.a = new_face_points[0], .b = new_face_points[1], .c = new_face_points[2]};
+                array_push(mesh.faces, f);
+                printf("face # %d: %d %d %d\n", face_num, f.a, f.b, f.c);
+                face_num++;
+            }
+        } else {
+            fprintf(stderr, "Error: line %d did not look valid.\n", line_num);
+            all_good = false;
         }
     }
-
 
     if (line_p) {
         free(line_p);
@@ -149,6 +194,10 @@ bool load_obj_file_data(char * filename)
 
     if (fp) {
         fclose(fp);
+    }
+
+    if (all_good) {
+        printf("Found %d vertices and %d faces.\n", vertex_num, face_num);
     }
 
     return all_good;

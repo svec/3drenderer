@@ -42,7 +42,8 @@ bool setup(void)
 	}
 
 	//load_cube_mesh_data();
-	bool success = load_obj_file_data("assets/test.obj");
+	bool success = load_obj_file_data("assets/cube.obj");
+	//bool success = load_obj_file_data("assets/f22.obj");
 	if (success == false) {
 		fprintf(stderr, "Error: loading graphics obj file failed.\n");
 		return false;
@@ -205,7 +206,7 @@ int main(void) {
 		is_running = false;
 	}
 
-	is_running = false; // svechack
+	//is_running = false; // svechack
 
 	while (is_running) {
 		process_input();
