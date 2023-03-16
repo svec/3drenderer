@@ -112,8 +112,8 @@ void update(void)
 			vec3_t transformed_vertex = face_vertices[vertex_i];
 
 			transformed_vertex = vec3_rotate_x(transformed_vertex, cube_rotation.x);
-			transformed_vertex = vec3_rotate_y(transformed_vertex, cube_rotation.y);
-			transformed_vertex = vec3_rotate_z(transformed_vertex, cube_rotation.z);
+			//transformed_vertex = vec3_rotate_y(transformed_vertex, cube_rotation.y);
+			//transformed_vertex = vec3_rotate_z(transformed_vertex, cube_rotation.z);
 
 			// Translate the vertex away from the camera.
 			transformed_vertex.z -= camera_position.z;
