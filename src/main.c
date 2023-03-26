@@ -153,7 +153,7 @@ void update(void)
         // Compute the face normal using the cross product to find a perpencicular line to the face.
         vec3_t normal = vec3_cross(vector_ab, vector_ac);
 
-        // Normalize it in place (not sure why the instructor wanted to do this instead of returning
+        // Normalize it in place. Not sure why the instructor wanted to do this instead of returning
         // a new vector, but I'm going to follow his lead.
         vec3_normalize(&normal);
 
