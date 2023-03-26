@@ -159,7 +159,7 @@ void update(void)
         // How aligned is the face's normal with the camera ray?
         float dot_normal_camera = vec3_dot(camera_ray, normal);
 
-        if (dot_normal_camera > 0) {
+        if (dot_normal_camera < 0) {
             // If the dot product is < 0, then the face is pointing away from the camera, 
             // and we don't need to display it.
             continue;
