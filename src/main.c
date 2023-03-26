@@ -149,12 +149,11 @@ void update(void)
 
         vec3_t vector_ab = vec3_sub(vector_b, vector_a); // Vector AB
         vec3_t vector_ac = vec3_sub(vector_c, vector_a); // Vector AC
+        vec3_normalize(&vector_ab);
+        vec3_normalize(&vector_ac);
 
         // Compute the face normal using the cross product to find a perpencicular line to the face.
         vec3_t normal = vec3_cross(vector_ab, vector_ac);
-
-        // Normalize it in place. Not sure why the instructor wanted to do this instead of returning
-        // a new vector, but I'm going to follow his lead.
         vec3_normalize(&normal);
 
         // Find the vector between a point in the triangle (point A) and the camera origin.
