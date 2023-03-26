@@ -14,7 +14,7 @@ int previous_frame_time = 0;
 
 triangle_t *triangles_to_render = NULL;
 
-vec3_t camera_position = { .x = 0, .y = 0, .z = -5};
+vec3_t camera_position = { .x = 0, .y = 0, .z = 0};
 
 bool is_running = false;
 
@@ -120,9 +120,12 @@ void update(void)
 
         triangle_t projected_triangle;
 
+        vec3_t transformed_vertices[3];
+
         // For all 3 vertices of this triangle, apply transformations.
         for (int vertex_i = 0; vertex_i < 3; vertex_i++)
         {
+            // Rotate each vertex.
             vec3_t transformed_vertex = face_vertices[vertex_i];
 
             transformed_vertex = vec3_rotate_x(transformed_vertex, mesh.rotation.x);
@@ -130,10 +133,41 @@ void update(void)
             transformed_vertex = vec3_rotate_z(transformed_vertex, mesh.rotation.z);
 
             // Translate the vertex away from the camera.
-            transformed_vertex.z -= camera_position.z;
+            transformed_vertex.z += 5; 
 
+            // Save off the transformed vertex.
+            transformed_vertices[vertex_i] = transformed_vertex;
+        }
+
+        // Backface culling.
+        // Remember that triangles are "clockwise", going A-B-C.
+        // Also remember that we use a left-handed axis system, so z gets larger
+        // going "into" the screen away from the viewer.
+        vec3_t vector_a = transformed_vertices[0];   /*     A     */
+        vec3_t vector_b = transformed_vertices[1];   /*    / \    */
+        vec3_t vector_c = transformed_vertices[2];   /*   C---B   */
+
+        vec3_t vector_ab = vec3_sub(vector_b, vector_a); // Vector AB
+        vec3_t vector_ac = vec3_sub(vector_c, vector_a); // Vector AC
+
+        // Compute the face normal using the cross product to find a perpencicular line to the face.
+        vec3_t normal = vec3_cross(vector_ab, vector_ac);
+
+        // Find the vector between a point in the triangle (point A) and the camera origin.
+        vec3_t camera_ray = vec3_sub(camera_position, vector_a);
+
+        // How aligned is the face's normal with the camera ray?
+        float dot_normal_camera = vec3_dot(camera_ray, normal);
+
+        if (dot_normal_camera > 0) {
+            // If the dot product is < 0, then the face is pointing away from the camera, 
+            // and we don't need to display it.
+            continue;
+        }
+
+        for (int vertex_i = 0; vertex_i < 3; vertex_i++) {
             // Project the current vertex.
-            vec2_t projected_point = project(transformed_vertex);
+            vec2_t projected_point = project(transformed_vertices[vertex_i]);
 
             projected_point.x += (window_width / 2);  // translate to center of window
             projected_point.y += (window_height / 2); // translate to center of window
