@@ -189,18 +189,23 @@ void render(void)
 
     // Loop all projected triangles and render them.
 
-#if 0
     int num_triangles = array_length(triangles_to_render);
 
     for (int ii=0; ii < num_triangles; ii++) {
         triangle_t triangle = triangles_to_render[ii];
 
-        // Draw each point as a small 4x4 yellow rectangle so we can see it.
-        draw_rect(triangle.points[0].x, triangle.points[0].y, 3, 3, 0xFFFFFF00);
-        draw_rect(triangle.points[1].x, triangle.points[1].y, 3, 3, 0xFFFFFF00);
-        draw_rect(triangle.points[2].x, triangle.points[2].y, 3, 3, 0xFFFFFF00);
+        draw_filled_triangle(
+            triangle.points[0].x, 
+            triangle.points[0].y, 
+            triangle.points[1].x, 
+            triangle.points[1].y, 
+            triangle.points[2].x, 
+            triangle.points[2].y, 
+            0xFFFFFFFF
+        );
 
-        // Draw the lines for the triangle.
+
+        // Draw the outlines for the triangle.
         draw_triangle(
             triangle.points[0].x, 
             triangle.points[0].y, 
@@ -208,12 +213,14 @@ void render(void)
             triangle.points[1].y, 
             triangle.points[2].x, 
             triangle.points[2].y, 
-            0xFF00FF00
+            0xFF000000
         );
-    }
-#endif
 
-    draw_filled_triangle(300, 100, 50, 400, 500, 700, 0xFF00FF00);
+        // Draw each point as a small 4x4 yellow rectangle so we can see it.
+        draw_rect(triangle.points[0].x, triangle.points[0].y, 3, 3, 0xFFFFFF00);
+        draw_rect(triangle.points[1].x, triangle.points[1].y, 3, 3, 0xFFFFFF00);
+        draw_rect(triangle.points[2].x, triangle.points[2].y, 3, 3, 0xFFFFFF00);
+    }
 
     // Now that we've rendered the triagles into the frame buffer, 
     // clear the triangle array.
