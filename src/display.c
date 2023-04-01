@@ -9,7 +9,7 @@ uint32_t * color_buffer = NULL;
 int window_width = 800;
 int window_height = 600;
 
-bool use_fullscreen = false;
+bool use_fullscreen = true;
 
 bool initialize_window(void)
 {

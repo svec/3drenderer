@@ -189,6 +189,7 @@ void render(void)
 
     // Loop all projected triangles and render them.
 
+#if 0
     int num_triangles = array_length(triangles_to_render);
 
     for (int ii=0; ii < num_triangles; ii++) {
@@ -210,6 +211,9 @@ void render(void)
             0xFF00FF00
         );
     }
+#endif
+
+    draw_filled_triangle(300, 100, 50, 400, 500, 700, 0xFF00FF00);
 
     // Now that we've rendered the triagles into the frame buffer, 
     // clear the triangle array.
