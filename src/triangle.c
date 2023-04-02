@@ -87,7 +87,7 @@ void fill_flat_top_triangle(int x0, int y0, int x1, int y1, int x2, int y2, uint
 }
 
 /* /////////////////////////////////////////////////////////////////////////////
-// Draw a filled triangle with the flat-top/flat-bottom method
+// Draw a filled triangle with the flat-top/flat-bottom method.
 // We split the original triangle in two, half flat-bottom (the top half of the triangle
 // had a flat bottom) and half flat-top (the bottom half of the triangle has a
 // flat top).
