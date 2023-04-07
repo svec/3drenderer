@@ -11,6 +11,10 @@
 float fov_factor = 640;
 
 int previous_frame_time = 0;
+bool g_display_back_face_culling = true;
+bool g_display_vertex_dot = true;
+bool g_display_wireframe_lines = true;
+bool g_display_filled_trianges = true;
 
 triangle_t *triangles_to_render = NULL;
 
@@ -62,8 +66,41 @@ void process_input(void)
             is_running = false;
             break;
         case SDL_KEYDOWN:
+            /*
+                Pressing “1” displays the wireframe and a small red dot for each triangle vertex
+                Pressing “2” displays only the wireframe lines
+                Pressing “3” displays filled triangles with a solid color
+                Pressing “4” displays both filled triangles and wireframe lines
+                Pressing “c” we should enable back-face culling
+                Pressing “d” we should disable the back-face culling
+                */
             if (event.key.keysym.sym == SDLK_ESCAPE) {
                 is_running = false;
+            }
+            if (event.key.keysym.sym == SDLK_1) {
+                g_display_vertex_dot = true;
+                g_display_wireframe_lines = true;
+            }
+            if (event.key.keysym.sym == SDLK_2) {
+                g_display_vertex_dot = false;
+                g_display_wireframe_lines = true;
+                g_display_filled_trianges = false;
+            }
+            if (event.key.keysym.sym == SDLK_3) {
+                g_display_vertex_dot = false;
+                g_display_wireframe_lines = false;
+                g_display_filled_trianges = true;
+            }
+            if (event.key.keysym.sym == SDLK_4) {
+                g_display_vertex_dot = false;
+                g_display_wireframe_lines = true;
+                g_display_filled_trianges = true;
+            }
+            if (event.key.keysym.sym == SDLK_c) {
+                g_display_back_face_culling = true;
+            }
+            if (event.key.keysym.sym == SDLK_d) {
+                g_display_back_face_culling = false;
             }
             break;
         default:
@@ -162,7 +199,7 @@ void update(void)
         // How aligned is the face's normal with the camera ray?
         float dot_normal_camera = vec3_dot(camera_ray, normal);
 
-        if (dot_normal_camera < 0) {
+        if (g_display_back_face_culling && (dot_normal_camera < 0)) {
             // If the dot product is < 0, then the face is pointing away from the camera, 
             // and we don't need to display it.
             continue;
@@ -197,32 +234,35 @@ void render(void)
     for (int ii=0; ii < num_triangles; ii++) {
         triangle_t triangle = triangles_to_render[ii];
 
-        draw_filled_triangle(
-            triangle.points[0].x, 
-            triangle.points[0].y, 
-            triangle.points[1].x, 
-            triangle.points[1].y, 
-            triangle.points[2].x, 
-            triangle.points[2].y, 
-            0xFFFFFFFF
-        );
+        if (g_display_filled_trianges) {
+            draw_filled_triangle(
+                triangle.points[0].x,
+                triangle.points[0].y,
+                triangle.points[1].x,
+                triangle.points[1].y,
+                triangle.points[2].x,
+                triangle.points[2].y,
+                0xFFFFFFFF);
+        }
 
+        if (g_display_wireframe_lines) {
+            // Draw the outlines for the triangle.
+            draw_triangle(
+                triangle.points[0].x,
+                triangle.points[0].y,
+                triangle.points[1].x,
+                triangle.points[1].y,
+                triangle.points[2].x,
+                triangle.points[2].y,
+                0xFF0000FF);
+        }
 
-        // Draw the outlines for the triangle.
-        draw_triangle(
-            triangle.points[0].x, 
-            triangle.points[0].y, 
-            triangle.points[1].x, 
-            triangle.points[1].y, 
-            triangle.points[2].x, 
-            triangle.points[2].y, 
-            0xFF000000
-        );
-
-        // Draw each point as a small 4x4 yellow rectangle so we can see it.
-        draw_rect(triangle.points[0].x, triangle.points[0].y, 3, 3, 0xFFFFFF00);
-        draw_rect(triangle.points[1].x, triangle.points[1].y, 3, 3, 0xFFFFFF00);
-        draw_rect(triangle.points[2].x, triangle.points[2].y, 3, 3, 0xFFFFFF00);
+        if (g_display_vertex_dot) {
+            // Draw each point as a small 4x4 yellow rectangle so we can see it.
+            draw_rect(triangle.points[0].x, triangle.points[0].y, 3, 3, 0xFFFF0000);
+            draw_rect(triangle.points[1].x, triangle.points[1].y, 3, 3, 0xFFFF0000);
+            draw_rect(triangle.points[2].x, triangle.points[2].y, 3, 3, 0xFFFF0000);
+        }
     }
 
     // Now that we've rendered the triagles into the frame buffer, 
