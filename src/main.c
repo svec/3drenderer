@@ -45,13 +45,15 @@ bool setup(void)
         return false;
     }
 
-    //load_cube_mesh_data();
+    load_cube_mesh_data();
+#if 0
     bool success = load_obj_file_data("assets/cube.obj");
     //bool success = load_obj_file_data("assets/f22.obj");
     if (success == false) {
         fprintf(stderr, "Error: loading graphics obj file failed.\n");
         return false;
     }
+#endif
 
     return true;
 }
@@ -155,8 +157,6 @@ void update(void)
         face_vertices[1] = mesh.vertices[mesh_face.b - 1]; // -1 because vertices are 1-indexed
         face_vertices[2] = mesh.vertices[mesh_face.c - 1]; // -1 because vertices are 1-indexed
 
-        triangle_t projected_triangle;
-
         vec3_t transformed_vertices[3];
 
         // For all 3 vertices of this triangle, apply transformations.
@@ -205,15 +205,25 @@ void update(void)
             continue;
         }
 
+        vec2_t projected_points[3];
+
         for (int vertex_i = 0; vertex_i < 3; vertex_i++) {
             // Project the current vertex.
-            vec2_t projected_point = project(transformed_vertices[vertex_i]);
+            projected_points[vertex_i] = project(transformed_vertices[vertex_i]);
 
-            projected_point.x += (window_width / 2);  // translate to center of window
-            projected_point.y += (window_height / 2); // translate to center of window
+            projected_points[vertex_i].x += (window_width / 2);  // translate to center of window
+            projected_points[vertex_i].y += (window_height / 2); // translate to center of window
 
-            projected_triangle.points[vertex_i] = projected_point;
         }
+
+        triangle_t projected_triangle = {
+            .points = {
+                {projected_points[0].x, projected_points[0].y},
+                {projected_points[1].x, projected_points[1].y},
+                {projected_points[2].x, projected_points[2].y},
+            },
+            .color = mesh_face.color
+        };
 
         // Saves the projected triangle to the the array of triangles to render.
         array_push(triangles_to_render, projected_triangle);
@@ -242,7 +252,7 @@ void render(void)
                 triangle.points[1].y,
                 triangle.points[2].x,
                 triangle.points[2].y,
-                0xFFFFFFFF);
+                triangle.color);
         }
 
         if (g_display_wireframe_lines) {
