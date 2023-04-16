@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include <SDL2/SDL.h>
 #include "display.h"
 #include "gfx-vector.h"
@@ -124,6 +125,19 @@ vec2_t project(vec3_t point3d)
     return projected_point;
 }
 
+int compare_triangles(const void * a, const void * b)
+{
+    triangle_t * p1 = (triangle_t *)a;
+    triangle_t * p2 = (triangle_t *)b;
+
+    if (p1->avg_depth < p2->avg_depth) {
+        return -1;
+    } else if (p1->avg_depth > p2->avg_depth) {
+        return 1;
+    }
+    return 0;
+}
+
 void update(void)
 {
     // Do we need to delay before updating the frame?
@@ -216,18 +230,27 @@ void update(void)
 
         }
 
+        // Calculate the average z depth for each triangle now that all transformations are done.
+        // Using a very naive definition of triangle depth: just average all 3 z points.
+        float avg_depth = (transformed_vertices[0].z + transformed_vertices[1].z + transformed_vertices[2].z) / 3.0;
+
         triangle_t projected_triangle = {
             .points = {
                 {projected_points[0].x, projected_points[0].y},
                 {projected_points[1].x, projected_points[1].y},
                 {projected_points[2].x, projected_points[2].y},
             },
-            .color = mesh_face.color
+            .color = mesh_face.color,
+            .avg_depth = avg_depth
         };
 
         // Saves the projected triangle to the the array of triangles to render.
         array_push(triangles_to_render, projected_triangle);
     }
+
+    // Sort the triangles_to_render by average depth so we can use the Painters Algorithm
+    // to draw the furthest away triangles before nearer triangles.
+    qsort(triangles_to_render, array_length(triangles_to_render), sizeof(triangle_t), compare_triangles);
 }
 
 void render(void)
@@ -239,6 +262,7 @@ void render(void)
     // earliest example:
     //draw_filled_triangle(300, 100, 50, 400, 500, 700, 0xFF00FF00);
 
+    // triangles_to_render is already sorted from back to front.
     int num_triangles = array_length(triangles_to_render);
 
     for (int ii=0; ii < num_triangles; ii++) {
