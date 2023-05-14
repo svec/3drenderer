@@ -160,9 +160,12 @@ void update(void)
     mesh.rotation.y += 0.01;
     mesh.rotation.z += 0.01;
 
-    //mesh.scale.x += 0.002;
-    //mesh.scale.y += 0.001;
-    //mesh.translation.x += 0.01;
+    mesh.scale.x += 0.0002;
+    mesh.scale.y += 0.0001;
+    mesh.scale.y += 0.0003;
+
+    mesh.translation.x += 0.001;
+    mesh.translation.y += 0.002;
 
     // Translate the vertex away from the camera.
     mesh.translation.z = 5; 
@@ -191,26 +194,19 @@ void update(void)
         // For all 3 vertices of this triangle, apply transformations.
         for (int vertex_i = 0; vertex_i < 3; vertex_i++)
         {
-            // Rotate each vertex.
             vec4_t transformed_vertex = vec4_from_vec3(face_vertices[vertex_i]);
 
-            // First we scale.
-            transformed_vertex = mat4_mul_vec4(scale_matrix, transformed_vertex);
+            // Creating a single World Matrix combining the scale, rotation, and translation matrices.
+            // Note that the order matters: Must be scale first, then rotation, and finally translation last.
+            mat4_t world_matrix = mat4_identity();
+            world_matrix = mat4_mul_mat4(scale_matrix, world_matrix);
+            world_matrix = mat4_mul_mat4(rotation_matrix_x, world_matrix);
+            world_matrix = mat4_mul_mat4(rotation_matrix_y, world_matrix);
+            world_matrix = mat4_mul_mat4(rotation_matrix_z, world_matrix);
+            world_matrix = mat4_mul_mat4(translation_matrix, world_matrix);
 
-            // Second, we rotate around all 3 axes.
-            transformed_vertex = mat4_mul_vec4(rotation_matrix_x, transformed_vertex);
-            transformed_vertex = mat4_mul_vec4(rotation_matrix_y, transformed_vertex);
-            transformed_vertex = mat4_mul_vec4(rotation_matrix_z, transformed_vertex);
-
-            // Lastly, we translate.
-            transformed_vertex = mat4_mul_vec4(translation_matrix, transformed_vertex);
-
-
-            #if 0
-            transformed_vertex = vec3_rotate_x(transformed_vertex, mesh.rotation.x);
-            transformed_vertex = vec3_rotate_y(transformed_vertex, mesh.rotation.y);
-            transformed_vertex = vec3_rotate_z(transformed_vertex, mesh.rotation.z);
-            #endif
+            // Multiply (apply) the World Matrix by the vertex to get the transformed vertex.
+            transformed_vertex = mat4_mul_vec4(world_matrix, transformed_vertex);
 
             // Save off the transformed vertex.
             transformed_vertices[vertex_i] = transformed_vertex;

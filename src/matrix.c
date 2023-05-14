@@ -131,3 +131,15 @@ mat4_t mat4_make_rotation_z(float angle)
 
     return m;
 }
+
+mat4_t mat4_mul_mat4(mat4_t a, mat4_t b)
+{
+    mat4_t m;
+    for (int row=0; row < 4; row++) {
+        for (int col=0; col < 4; col++) {
+            m.m[row][col] =   a.m[row][0] * b.m[0][col] + a.m[row][1] * b.m[1][col] 
+                            + a.m[row][2] * b.m[2][col] + a.m[row][3] * b.m[3][col];
+        }
+    }
+    return m;
+}
