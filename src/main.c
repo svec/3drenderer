@@ -162,14 +162,17 @@ void update(void)
 
     //mesh.scale.x += 0.002;
     //mesh.scale.y += 0.001;
-    mesh.translation.x += 0.01;
+    //mesh.translation.x += 0.01;
 
     // Translate the vertex away from the camera.
     mesh.translation.z = 5; 
 
-    // Create a scale matrix and translation that will be used to multiply the mesh vertices.
+    // Create a scale, translation, and rotation matrices that will be used to multiply the mesh vertices.
     mat4_t scale_matrix = mat4_make_scale(mesh.scale.x, mesh.scale.y, mesh.scale.z);
     mat4_t translation_matrix = mat4_make_translation(mesh.translation.x, mesh.translation.y, mesh.translation.z);
+    mat4_t rotation_matrix_x = mat4_make_rotation_x(mesh.rotation.x);
+    mat4_t rotation_matrix_y = mat4_make_rotation_y(mesh.rotation.y);
+    mat4_t rotation_matrix_z = mat4_make_rotation_z(mesh.rotation.z);
 
     // Loop all triangle faces.
     int num_faces = array_length(mesh.faces);
@@ -191,12 +194,17 @@ void update(void)
             // Rotate each vertex.
             vec4_t transformed_vertex = vec4_from_vec3(face_vertices[vertex_i]);
 
-            // Use a matrix to scale our original vertex by multiplying
-            // by the scale_matrix.
+            // First we scale.
             transformed_vertex = mat4_mul_vec4(scale_matrix, transformed_vertex);
 
-            // Now translate.
+            // Second, we rotate around all 3 axes.
+            transformed_vertex = mat4_mul_vec4(rotation_matrix_x, transformed_vertex);
+            transformed_vertex = mat4_mul_vec4(rotation_matrix_y, transformed_vertex);
+            transformed_vertex = mat4_mul_vec4(rotation_matrix_z, transformed_vertex);
+
+            // Lastly, we translate.
             transformed_vertex = mat4_mul_vec4(translation_matrix, transformed_vertex);
+
 
             #if 0
             transformed_vertex = vec3_rotate_x(transformed_vertex, mesh.rotation.x);
