@@ -170,7 +170,7 @@ void update(void)
     // Translate the vertex away from the camera.
     mesh.translation.z = 5; 
 
-    // Create a scale, translation, and rotation matrices that will be used to multiply the mesh vertices.
+    // Create scale, translation, and rotation matrices that will be used to multiply the mesh vertices.
     mat4_t scale_matrix = mat4_make_scale(mesh.scale.x, mesh.scale.y, mesh.scale.z);
     mat4_t translation_matrix = mat4_make_translation(mesh.translation.x, mesh.translation.y, mesh.translation.z);
     mat4_t rotation_matrix_x = mat4_make_rotation_x(mesh.rotation.x);
