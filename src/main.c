@@ -153,6 +153,7 @@ void update(void)
     mesh.translation.x += 0.001;
     //mesh.translation.y += 0.002;
 
+
     // Translate the vertex away from the camera.
     mesh.translation.z = 5; 
 
