@@ -10,8 +10,6 @@
 #include "array.h"
 #include "matrix.h"
 
-float fov_factor = 640;
-
 int previous_frame_time = 0;
 bool g_display_back_face_culling = true;
 bool g_display_vertex_dot = true;
@@ -21,6 +19,8 @@ bool g_display_filled_trianges = true;
 triangle_t *triangles_to_render = NULL;
 
 vec3_t camera_position = { .x = 0, .y = 0, .z = 0};
+
+mat4_t proj_matrix;
 
 bool is_running = false;
 
@@ -47,15 +47,14 @@ bool setup(void)
         return false;
     }
 
+    // Initialize the perspective projection matrix.
+    float fov = M_PI/3.0; // 60 degrees = 180/3, = PI/3 in radians
+    float aspect = (float)window_height / (float)window_width;
+    float znear = 0.1;
+    float zfar = 100.0;
+    proj_matrix = mat4_make_projection(fov, aspect, znear, zfar);
+    
     load_cube_mesh_data();
-#if 0
-    bool success = load_obj_file_data("assets/cube.obj");
-    //bool success = load_obj_file_data("assets/f22.obj");
-    if (success == false) {
-        fprintf(stderr, "Error: loading graphics obj file failed.\n");
-        return false;
-    }
-#endif
 
     return true;
 }
@@ -113,19 +112,6 @@ void process_input(void)
     }
 }
 
-// Project a 3D point (our 3D space) into a 2D point (for the 2D screen).
-vec2_t project(vec3_t point3d)
-{
-    // Simple perspective divide projection: 
-    //     Divide by z, so things that are further away (larger z) are smaller.
-    // Scale by fov_factor.
-    vec2_t projected_point = {
-        .x = (fov_factor * point3d.x) / point3d.z,
-        .y = (fov_factor * point3d.y) / point3d.z
-    };
-    return projected_point;
-}
-
 int compare_triangles(const void * a, const void * b)
 {
     triangle_t * p1 = (triangle_t *)a;
@@ -161,11 +147,11 @@ void update(void)
     mesh.rotation.z += 0.01;
 
     mesh.scale.x += 0.0002;
-    mesh.scale.y += 0.0001;
-    mesh.scale.y += 0.0003;
+    //mesh.scale.y += 0.0001;
+    mesh.scale.z += 0.0003;
 
     mesh.translation.x += 0.001;
-    mesh.translation.y += 0.002;
+    //mesh.translation.y += 0.002;
 
     // Translate the vertex away from the camera.
     mesh.translation.z = 5; 
@@ -241,15 +227,19 @@ void update(void)
             continue;
         }
 
-        vec2_t projected_points[3];
+        vec4_t projected_points[3];
 
         for (int vertex_i = 0; vertex_i < 3; vertex_i++) {
             // Project the current vertex.
-            projected_points[vertex_i] = project(vec3_from_vec4(transformed_vertices[vertex_i]));
+            projected_points[vertex_i] = mat4_mul_vec4_project(proj_matrix, transformed_vertices[vertex_i]);
 
-            projected_points[vertex_i].x += (window_width / 2);  // translate to center of window
-            projected_points[vertex_i].y += (window_height / 2); // translate to center of window
+            // Scale into the view.
+            projected_points[vertex_i].x *= (window_width / 2.0);
+            projected_points[vertex_i].y *= (window_height / 2.0);
 
+            // Translate the projected points to the middle of the screen.
+            projected_points[vertex_i].x += (window_width / 2.0);  // translate to center of window
+            projected_points[vertex_i].y += (window_height / 2.0); // translate to center of window
         }
 
         // Calculate the average z depth for each triangle now that all transformations are done.

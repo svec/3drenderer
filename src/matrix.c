@@ -143,3 +143,35 @@ mat4_t mat4_mul_mat4(mat4_t a, mat4_t b)
     }
     return m;
 }
+
+mat4_t mat4_make_projection(float fov /* field of view angle*/, float aspect /* screen h/w */, float znear, float zfar)
+{
+    // | (h/w) * 1/tan(fov/2)              0                     0                             0 |
+    // |                    0   1/tan(fov/2)                     0                             0 |
+    // |                    0              0   zfar / (zfar-znear)    (-zfar*znear)/(zfar-znear) |
+    // |                    0              0                     1                             0 |
+    mat4_t m = {{{ 0 }}};
+    m.m[0][0] = aspect * (1 / tan(fov/2));
+    m.m[1][1] = 1/tan(fov/2);
+    m.m[2][2] = zfar / (zfar - znear);
+    m.m[2][3] = (-zfar * znear) / (zfar - znear);
+    m.m[3][2] = 1.0; // copies original z to w for use later
+
+    return m;
+}
+
+vec4_t mat4_mul_vec4_project(mat4_t mat_proj, vec4_t v)
+{
+    // Multiply the projection matrix by a vector.
+    vec4_t result = mat4_mul_vec4(mat_proj, v);
+
+    // Now perform perspective divide by dividing by the original z depth, which is
+    // stored in the w value.
+    if (result.w != 0.0) {
+        result.x /= result.w;
+        result.y /= result.w;
+        result.z /= result.w;
+    }
+
+    return result;
+}
