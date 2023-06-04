@@ -9,6 +9,7 @@
 #include "triangle.h"
 #include "array.h"
 #include "matrix.h"
+#include "light.h"
 
 int previous_frame_time = 0;
 bool g_display_back_face_culling = true;
@@ -54,7 +55,9 @@ bool setup(void)
     float zfar = 100.0;
     proj_matrix = mat4_make_projection(fov, aspect, znear, zfar);
     
-    load_cube_mesh_data();
+    //load_cube_mesh_data();
+    //load_obj_file_data("./assets/cube.obj");
+    load_obj_file_data("./assets/f22.obj");
 
     return true;
 }
@@ -118,9 +121,9 @@ int compare_triangles(const void * a, const void * b)
     triangle_t * p2 = (triangle_t *)b;
 
     if (p1->avg_depth < p2->avg_depth) {
-        return -1;
-    } else if (p1->avg_depth > p2->avg_depth) {
         return 1;
+    } else if (p1->avg_depth > p2->avg_depth) {
+        return -1;
     }
     return 0;
 }
@@ -146,16 +149,16 @@ void update(void)
     mesh.rotation.y += 0.01;
     mesh.rotation.z += 0.01;
 
-    mesh.scale.x += 0.0002;
+    //mesh.scale.x += 0.0002;
     //mesh.scale.y += 0.0001;
-    mesh.scale.z += 0.0003;
+    //mesh.scale.z += 0.0003;
 
-    mesh.translation.x += 0.001;
+    //mesh.translation.x += 0.001;
     //mesh.translation.y += 0.002;
 
 
     // Translate the vertex away from the camera.
-    mesh.translation.z = 5; 
+    mesh.translation.z = 5.0; 
 
     // Create scale, translation, and rotation matrices that will be used to multiply the mesh vertices.
     mat4_t scale_matrix = mat4_make_scale(mesh.scale.x, mesh.scale.y, mesh.scale.z);
@@ -212,7 +215,7 @@ void update(void)
         vec3_normalize(&vector_ab);
         vec3_normalize(&vector_ac);
 
-        // Compute the face normal using the cross product to find a perpencicular line to the face.
+        // Compute the face normal using the cross product to find a perpendicular line to the face.
         vec3_t normal = vec3_cross(vector_ab, vector_ac);
         vec3_normalize(&normal);
 
@@ -220,7 +223,7 @@ void update(void)
         vec3_t camera_ray = vec3_sub(camera_position, vector_a);
 
         // How aligned is the face's normal with the camera ray?
-        float dot_normal_camera = vec3_dot(camera_ray, normal);
+        float dot_normal_camera = vec3_dot(normal, camera_ray);
 
         if (g_display_back_face_culling && (dot_normal_camera < 0)) {
             // If the dot product is < 0, then the face is pointing away from the camera, 
@@ -247,13 +250,25 @@ void update(void)
         // Using a very naive definition of triangle depth: just average all 3 z points.
         float avg_depth = (transformed_vertices[0].z + transformed_vertices[1].z + transformed_vertices[2].z) / 3.0;
 
+        // Calculate the triangle color based on the original triangle color and the angle of the light 
+        // on the triangle.
+        // We compare the light ray's direction and the triangle face normal vector to see how aligned the triangle is 
+        // with the light. The more aligned the triangle face is with the light, the more the light will
+        // brighten the triangle.
+        // We use the negative of the dot product because we actually care about the opposite of the light
+        // direction: we want max light if the normal is pointed directly opposite the light direction.
+        // Using the negative of the dot product does this.
+        float light_intensity_factor = -vec3_dot(normal, light.direction);
+        uint32_t triangle_color = light_apply_intensity(mesh_face.color, light_intensity_factor);
+        //uint32_t triangle_color = mesh_face.color;
+
         triangle_t projected_triangle = {
             .points = {
                 {projected_points[0].x, projected_points[0].y},
                 {projected_points[1].x, projected_points[1].y},
                 {projected_points[2].x, projected_points[2].y},
             },
-            .color = mesh_face.color,
+            .color = triangle_color,
             .avg_depth = avg_depth
         };
 
