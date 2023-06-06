@@ -241,6 +241,10 @@ void update(void)
             projected_points[vertex_i].x *= (window_width / 2.0);
             projected_points[vertex_i].y *= (window_height / 2.0);
 
+            // Invert the y values to account for flipped screen y coordinate: in our object coordinate system,
+            // y increases going "up" the screen, but in SDL the y increases going "down" the screen.
+            projected_points[vertex_i].y *= -1.0;
+
             // Translate the projected points to the middle of the screen.
             projected_points[vertex_i].x += (window_width / 2.0);  // translate to center of window
             projected_points[vertex_i].y += (window_height / 2.0); // translate to center of window
