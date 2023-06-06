@@ -1,12 +1,6 @@
 #include "triangle.h"
+#include "swap.h"
 #include "display.h"
-
-void int_swap(int *a, int *b) 
-{
-    int temp = *a;
-    *a = *b;
-    *b = temp;
-}
 
 /* /////////////////////////////////////////////////////////////////////////////
 // Draw a filled a triangle with a flat bottom
@@ -150,5 +144,112 @@ void draw_filled_triangle(int x0, int y0, int x1, int y1, int x2, int y2, uint32
 
         // Draw flat-top triangle.
         fill_flat_top_triangle(x1, y1, Mx, My, x2, y2, color);
+    }
+}
+/* ////////////////////////////////////////////////////////////////////////////
+// Draw a textured triangle based on a texture array of colors.
+// We split the original triangle in two, half flat-bottom and half flat-top.
+///////////////////////////////////////////////////////////////////////////////
+//
+//        v0
+//        /\ 
+//       /  \ 
+//      /    \ 
+//     /      \ 
+//   v1--------\ 
+//     \_       \ 
+//        \_     \ 
+//           \_   \ 
+//              \_ \ 
+//                 \\ 
+//                   \ 
+//                    v2
+//
+*/
+
+void draw_textured_triangle(int x0, int y0, float u0, float v0, 
+                            int x1, int y1, float u1, float v1,
+                            int x2, int y2, float u2, float v2,
+                            uint32_t *texture)
+{
+    // First sort the triangle so that y0 < y1 < y2 (so y0 is at the top and y2 is at
+    // the bottom of the triangle).
+    if (y0 > y1) {
+        int_swap(&x0, &x1);
+        int_swap(&y0, &y1);
+        float_swap(&u0, &u1);
+        float_swap(&v0, &v1);
+    }
+    if (y1 > y2) {
+        int_swap(&x1, &x2);
+        int_swap(&y1, &y2);
+        float_swap(&u1, &u2);
+        float_swap(&v1, &v2);
+    }
+    if (y0 > y1) {
+        int_swap(&x0, &x1);
+        int_swap(&y0, &y1);
+        float_swap(&u0, &u1);
+        float_swap(&v0, &v1);
+    }
+
+    // Render the upper part of the triangle - with a flat bottom.
+    float inverse_slope_1 = 0.0; // left leg of triangle
+    float inverse_slope_2 = 0.0; // right leg of triangle
+
+    if ((y1 - y0) != 0) {
+        inverse_slope_1 = (float)(x1 - x0) / (y1 - y0);
+    }
+    if ((y2 - y0) != 0) {
+        inverse_slope_2 = (float)(x2 - x0) / (y2 - y0);
+    }
+
+    if ((y1 - y0) != 0) {
+
+        for (int y = y0; y <= y1; y++) {
+            int x_start = x1 + ((y - y1) * inverse_slope_1);
+            int x_end = x0 + ((y - y0) * inverse_slope_2);
+
+            // Depending on orientation of triangle, x_start and x_end may be on either side of each
+            // other. Swap them so x_start is always on the left and x_end is always on the right.
+            if (x_end < x_start) {
+                int_swap(&x_start, &x_end);
+            }
+
+            for (int x = x_start; x < x_end; x++) {
+                // Draw the pixel with the color that comes from the texture.
+                draw_pixel(x, y, 0xFFFF00FF);
+            }
+        }
+    }
+
+    // Render the lower part of the triangle - with a flat top.
+    inverse_slope_1 = 0.0; // left leg of triangle
+    inverse_slope_2 = 0.0; // right leg of triangle
+
+    if ((y2 - y1) != 0) {
+        inverse_slope_1 = (float)(x2 - x1) / (y2 - y1);
+    }
+    if ((y2 - y0) != 0) {
+        inverse_slope_2 = (float)(x2 - x0) / (y2 - y0);
+    }
+
+    if ((y2 - y1) != 0) {
+
+        for (int y = y1; y <= y2; y++) {
+            int x_start = x1 + ((y - y1) * inverse_slope_1);
+            int x_end = x0 + ((y - y0) * inverse_slope_2);
+
+            // Depending on orientation of triangle, x_start and x_end may be on either side of each
+            // other. Swap them so x_start is always on the left and x_end is always on the right.
+            if (x_end < x_start) {
+                int_swap(&x_start, &x_end);
+            }
+
+            for (int x = x_start; x < x_end; x++) {
+                // Draw the pixel with the color that comes from the texture.
+                draw_pixel(x, y, 0xFFFF0055);
+            }
+        }
     }
 }

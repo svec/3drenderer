@@ -10,12 +10,14 @@
 #include "array.h"
 #include "matrix.h"
 #include "light.h"
+#include "texture.h"
 
 int previous_frame_time = 0;
 bool g_display_back_face_culling = true;
 bool g_display_vertex_dot = true;
 bool g_display_wireframe_lines = true;
-bool g_display_filled_trianges = true;
+bool g_display_filled_trianges = false;
+bool g_display_texture = true;
 
 triangle_t *triangles_to_render = NULL;
 
@@ -54,10 +56,16 @@ bool setup(void)
     float znear = 0.1;
     float zfar = 100.0;
     proj_matrix = mat4_make_projection(fov, aspect, znear, zfar);
+
+    // Manually load the hardcoded texture data from the static array.
+    // The REDBRICK_TEXTURE array is uint8_t's, cast it to uint32_t.
+    mesh_texture = (uint32_t *)REDBRICK_TEXTURE;
+    texture_width = 64;
+    texture_height = 64;
     
-    //load_cube_mesh_data();
+    load_cube_mesh_data();
     //load_obj_file_data("./assets/cube.obj");
-    load_obj_file_data("./assets/f22.obj");
+    //load_obj_file_data("./assets/f22.obj");
 
     return true;
 }
@@ -77,6 +85,8 @@ void process_input(void)
                 Pressing “2” displays only the wireframe lines
                 Pressing “3” displays filled triangles with a solid color
                 Pressing “4” displays both filled triangles and wireframe lines
+                Pressing “5” displays textured triangles
+                Pressing “6” displays textured triangles and wireframe lines
                 Pressing “c” we should enable back-face culling
                 Pressing “d” we should disable the back-face culling
                 */
@@ -96,11 +106,25 @@ void process_input(void)
                 g_display_vertex_dot = false;
                 g_display_wireframe_lines = false;
                 g_display_filled_trianges = true;
+                g_display_texture = false;
             }
             if (event.key.keysym.sym == SDLK_4) {
                 g_display_vertex_dot = false;
                 g_display_wireframe_lines = true;
                 g_display_filled_trianges = true;
+                g_display_texture = false;
+            }
+            if (event.key.keysym.sym == SDLK_5) {
+                g_display_vertex_dot = false;
+                g_display_wireframe_lines = false;
+                g_display_filled_trianges = false;
+                g_display_texture = true;
+            }
+            if (event.key.keysym.sym == SDLK_6) {
+                g_display_vertex_dot = false;
+                g_display_wireframe_lines = true;
+                g_display_filled_trianges = false;
+                g_display_texture = true;
             }
             if (event.key.keysym.sym == SDLK_c) {
                 g_display_back_face_culling = true;
@@ -146,8 +170,8 @@ void update(void)
 
     // Rotate the cube by a little bit in the y direction each frame.
     mesh.rotation.x += 0.01;
-    //mesh.rotation.y += 0.01;
-    //mesh.rotation.z += 0.01;
+    mesh.rotation.y += 0.01;
+    mesh.rotation.z += 0.01;
 
     //mesh.scale.x += 0.0002;
     //mesh.scale.y += 0.0001;
@@ -272,6 +296,11 @@ void update(void)
                 {projected_points[1].x, projected_points[1].y},
                 {projected_points[2].x, projected_points[2].y},
             },
+            .texcoords = {
+                {mesh_face.a_uv.u, mesh_face.a_uv.v},
+                {mesh_face.b_uv.u, mesh_face.b_uv.v},
+                {mesh_face.c_uv.u, mesh_face.c_uv.v},
+            },
             .color = triangle_color,
             .avg_depth = avg_depth
         };
@@ -309,6 +338,23 @@ void render(void)
                 triangle.points[2].x,
                 triangle.points[2].y,
                 triangle.color);
+        }
+
+        if (g_display_texture) {
+            draw_textured_triangle(
+                triangle.points[0].x,
+                triangle.points[0].y,
+                triangle.texcoords[0].u,
+                triangle.texcoords[0].v,
+                triangle.points[1].x,
+                triangle.points[1].y,
+                triangle.texcoords[1].u,
+                triangle.texcoords[1].v,
+                triangle.points[2].x,
+                triangle.points[2].y,
+                triangle.texcoords[2].u,
+                triangle.texcoords[2].v,
+                mesh_texture);
         }
 
         if (g_display_wireframe_lines) {
