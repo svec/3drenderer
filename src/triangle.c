@@ -189,19 +189,35 @@ vec3_t barycentric_weights(vec2_t a, vec2_t b, vec2_t c, vec2_t p) {
 // Function to draw the textured pixel at position (x,y) on screen, using interpolation
 // from 3 points of the triangle (points are a, b, and c).
 void draw_texel(int x, int y, uint32_t * texture,
-                vec2_t point_a, vec2_t point_b, vec2_t point_c,
-                float u0, float v0, float u1, float v1, float u2, float v2)
+                vec4_t point_a, vec4_t point_b, vec4_t point_c,
+                tex2_t a_uv, tex2_t b_uv, tex2_t c_uv)
 {
-    vec2_t point_p = { x, y };
-    vec3_t weights = barycentric_weights(point_a, point_b, point_c, point_p);
+    vec2_t p = { x, y };
+    vec2_t a = vec2_from_vec4(point_a);
+    vec2_t b = vec2_from_vec4(point_b);
+    vec2_t c = vec2_from_vec4(point_c);
+    vec3_t weights = barycentric_weights(a, b, c, p);
 
     float alpha = weights.x;
     float beta = weights.y;
     float gamma = weights.z;
 
-    // Interpolate the u and v values using barycentric weights alpha, beta, and gamma.
-    float interpolated_u = (u0 * alpha) + (u1 * beta) + (u2 * gamma);
-    float interpolated_v = (v0 * alpha) + (v1 * beta) + (v2 * gamma);
+    // u, v, and 1/w used for interpolation.
+    float interpolated_u;
+    float interpolated_v;
+    float interpolated_reciprocol_w; // W (z depth) is not linear with perspective, but 1/w (the reciprocol) is.
+
+    // Interpolate the u and v values using barycentric weights (alpha, beta, and gamma) and also 1/w.
+    // We use 1/w to get the perspective depth correct.
+    interpolated_u = ((a_uv.u / point_a.w) * alpha) + ((b_uv.u / point_b.w) * beta) + ((c_uv.u / point_c.w) * gamma);
+    interpolated_v = ((a_uv.v / point_a.w) * alpha) + ((b_uv.v / point_b.w) * beta) + ((c_uv.v / point_c.w) * gamma);
+
+    // Interpolate 1/w for the current pixel.
+    interpolated_reciprocol_w = ((1 / point_a.w) * alpha) + ((1 / point_b.w) * beta) + ((1 / point_c.w) * gamma);
+
+    // Now divide by w to get back to "normal" depth (instead of 1/w inverted (or reciprocol) depth).
+    interpolated_u /= interpolated_reciprocol_w;
+    interpolated_v /= interpolated_reciprocol_w;
 
     // Map the interpolated u and v values to the right pixel in the texture.
     int texture_x = abs( (int)(interpolated_u * texture_width));
@@ -234,9 +250,9 @@ void draw_texel(int x, int y, uint32_t * texture,
 //
 */
 
-void draw_textured_triangle(int x0, int y0, float u0, float v0, 
-                            int x1, int y1, float u1, float v1,
-                            int x2, int y2, float u2, float v2,
+void draw_textured_triangle(int x0, int y0, float z0, float w0, float u0, float v0, 
+                            int x1, int y1, float z1, float w1, float u1, float v1,
+                            int x2, int y2, float z2, float w2, float u2, float v2,
                             uint32_t *texture)
 {
     // First sort the triangle so that y0 < y1 < y2 (so y0 is at the top and y2 is at
@@ -246,24 +262,35 @@ void draw_textured_triangle(int x0, int y0, float u0, float v0,
         int_swap(&y0, &y1);
         float_swap(&u0, &u1);
         float_swap(&v0, &v1);
+        float_swap(&z0, &z1);
+        float_swap(&w0, &w1);
     }
     if (y1 > y2) {
         int_swap(&x1, &x2);
         int_swap(&y1, &y2);
         float_swap(&u1, &u2);
         float_swap(&v1, &v2);
+        float_swap(&z1, &z2);
+        float_swap(&w1, &w2);
     }
     if (y0 > y1) {
         int_swap(&x0, &x1);
         int_swap(&y0, &y1);
         float_swap(&u0, &u1);
         float_swap(&v0, &v1);
+        float_swap(&z0, &z1);
+        float_swap(&w0, &w1);
     }
 
     // Create the vector points of the sorted triangle for use in interpolation.
-    vec2_t point_a = { x0, y0 };
-    vec2_t point_b = { x1, y1 };
-    vec2_t point_c = { x2, y2 };
+    vec4_t point_a = { x0, y0, z0, w0 };
+    vec4_t point_b = { x1, y1, z1, w1 };
+    vec4_t point_c = { x2, y2, z2, w2 };
+
+    // Create texture coords after sorting.
+    tex2_t a_uv = {u0, v0};
+    tex2_t b_uv = {u1, v1};
+    tex2_t c_uv = {u2, v2};
 
     // Render the upper part of the triangle - with a flat bottom.
     float inverse_slope_1 = 0.0; // left leg of triangle
@@ -293,7 +320,7 @@ void draw_textured_triangle(int x0, int y0, float u0, float v0,
                 //draw_pixel(x, y, 0xFFFF00FF);
                 draw_texel(x, y, texture,
                            point_a, point_b, point_c,
-                           u0, v0, u1, v1, u2, v2);
+                           a_uv, b_uv, c_uv);
             }
         }
     }
@@ -326,7 +353,7 @@ void draw_textured_triangle(int x0, int y0, float u0, float v0,
                 //draw_pixel(x, y, 0xFFFF0055);
                 draw_texel(x, y, texture,
                            point_a, point_b, point_c,
-                           u0, v0, u1, v1, u2, v2);
+                           a_uv, b_uv, c_uv);
             }
         }
     }
