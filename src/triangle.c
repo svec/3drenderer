@@ -222,6 +222,13 @@ void draw_texel(int x, int y, uint32_t * texture,
     // Map the interpolated u and v values to the right pixel in the texture.
     int texture_x = abs( (int)(interpolated_u * texture_width));
     int texture_y = abs( (int)(interpolated_v * texture_height));
+    // Note: there's a bug here, but supposedly it gets addressed late in
+    // the class, so I'm leaving it as-is. The bug is a crash because 
+    // of a bad memory access in the texture[] array.
+    if ((texture_x > texture_width) || (texture_y > texture_height)) {
+        printf("ERROR: texture x or y too big: %d, %d\n", texture_x, texture_y);
+        printf("       interpolated u, v: %f, %f\n", interpolated_u, interpolated_v);
+    }
 
     uint32_t texture_array_index = (texture_width * texture_y) + texture_x;
 

@@ -1,3 +1,4 @@
 renderer
 .DS_Store
 .gitignore
+renderer.dSYM/**

@@ -3,7 +3,7 @@ SDL_INC_DIR = ${SDL_ROOT_DIR}/include
 SDL_LIB_DIR = ${SDL_ROOT_DIR}/lib
 
 CFLAGS=-I${SDL_INC_DIR} -D_THREAD_SAFE
-CFLAGS += -Wall -Wextra -std=c99
+CFLAGS += -g -Wall -Wextra -std=c99
 
 LFLAGS= -L${SDL_LIB_DIR} -lSDL2 -lm -lM
 
