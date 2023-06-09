@@ -11,6 +11,7 @@
 #include "matrix.h"
 #include "light.h"
 #include "texture.h"
+#include "upng.h"
 
 int previous_frame_time = 0;
 bool g_display_back_face_culling = true;
@@ -39,7 +40,8 @@ bool setup(void)
     // Create a texture buffer that displays the color buffer.
     color_buffer_texture = SDL_CreateTexture(
         renderer,
-        SDL_PIXELFORMAT_ARGB8888,
+        //SDL_PIXELFORMAT_ARGB8888,
+        SDL_PIXELFORMAT_RGBA32,
         SDL_TEXTUREACCESS_STREAMING,
         window_width,
         window_height
@@ -57,15 +59,23 @@ bool setup(void)
     float zfar = 100.0;
     proj_matrix = mat4_make_projection(fov, aspect, znear, zfar);
 
+#if 0
     // Manually load the hardcoded texture data from the static array.
     // The REDBRICK_TEXTURE array is uint8_t's, cast it to uint32_t.
     mesh_texture = (uint32_t *)REDBRICK_TEXTURE;
     texture_width = 64;
     texture_height = 64;
+#endif
     
+
     load_cube_mesh_data();
     //load_obj_file_data("./assets/cube.obj");
     //load_obj_file_data("./assets/f22.obj");
+
+    if (load_png_texture_data("./assets/cube.png") != true) {
+        fprintf(stderr, "Error: load_png_texture_data failed.\n");
+        return false;
+    }
 
     return true;
 }
@@ -402,6 +412,11 @@ void free_resources(void)
     if (color_buffer) {
         free(color_buffer);
         color_buffer = NULL;
+    }
+
+    if (png_texture) {
+        upng_free(png_texture);
+        png_texture = NULL;
     }
 }
 
