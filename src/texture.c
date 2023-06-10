@@ -76,7 +76,7 @@ const uint8_t REDBRICK_TEXTURE[] = {
 
 bool load_png_texture_data(char * filename)
 {
-    bool allgood = false;
+    bool all_good = false;
 
     png_texture = upng_new_from_file(filename);
     if (png_texture != NULL) {
@@ -87,9 +87,9 @@ bool load_png_texture_data(char * filename)
             mesh_texture = (uint32_t *)upng_get_buffer(png_texture);
             texture_width = upng_get_width(png_texture);
             texture_height = upng_get_height(png_texture);
-            allgood = true;
+            all_good = true;
         }
     }
 
-    return allgood;
+    return all_good;
 }

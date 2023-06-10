@@ -161,9 +161,12 @@ bool load_obj_file_data(char * filename)
     */
     bool all_good = true;
     int vertex_num = 0;
+    int texture_num = 0;
     int face_num = 0;
     int line_num = 0;
     char line[1024];
+
+    tex2_t * texcoords = NULL;
 
     while (all_good && fgets(line, 1024, fp)) {
         line_num++;
@@ -177,6 +180,16 @@ bool load_obj_file_data(char * filename)
                 break;
             }
             array_push(mesh.vertices, vertex);
+        } else if (strncmp(line, "vt ", 3) == 0) {
+            // Texture coordinate info.
+            texture_num++;
+            tex2_t texcoord;
+            if (sscanf(line, "vt  %f %f", &texcoord.u, &texcoord.v) != 2) {
+                fprintf(stderr, "Error reading line %d, expected a texture coordinate line\n", line_num);
+                all_good = false;
+                break;
+            }
+            array_push(texcoords, texcoord); // stopped at 14:55
         } else if (strncmp(line, "f ", 2) == 0) {
             face_num++;
             int vertex_indices[3];
@@ -196,23 +209,38 @@ bool load_obj_file_data(char * filename)
                     all_good = false;
                     break;
                 }
+                if (texture_indices[ii] > texture_num) {
+                    fprintf(stderr, "Error on line %d: face uses texture index %d, which is not defined.\n", line_num, texture_indices[ii]);
+                    all_good = false;
+                    break;
+                }
+            }
+            if (! all_good) {
+                break;
             }
             face_t face = {
-                .a = vertex_indices[0],
-                .b = vertex_indices[1],
-                .c = vertex_indices[2],
+                // Vertices and texture coordinates are 1-indexed, not 0-indexed, so we subtract 1.
+                .a = vertex_indices[0] - 1,
+                .b = vertex_indices[1] - 1,
+                .c = vertex_indices[2] - 1,
+
+                .a_uv = texcoords[texture_indices[0] - 1],
+                .b_uv = texcoords[texture_indices[1] - 1],
+                .c_uv = texcoords[texture_indices[2] - 1],
                 .color = 0xFFFFFFFF
             };
             array_push(mesh.faces, face);
         }
     }
 
+    array_free(texcoords);
+
     if (fp) {
         fclose(fp);
     }
 
     if (all_good) {
-        printf("Found %d vertices and %d faces.\n", vertex_num, face_num);
+        printf("Found %d vertices, %d faces, and %d texture coords.\n", vertex_num, face_num, texture_num);
     }
 
     return all_good;

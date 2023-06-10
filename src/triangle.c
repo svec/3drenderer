@@ -289,6 +289,13 @@ void draw_textured_triangle(int x0, int y0, float z0, float w0, float u0, float 
         float_swap(&w0, &w1);
     }
 
+    // Flip the V coordinates to account for inverted UV-coordinates. The obj file has
+    // u=v=0 at the top left, with u=v=1 at the bottom right: this is the inverse of 
+    // what our code assumes.
+    v0 = 1.0 - v0;
+    v1 = 1.0 - v1;
+    v2 = 1.0 - v2;
+
     // Create the vector points of the sorted triangle for use in interpolation.
     vec4_t point_a = { x0, y0, z0, w0 };
     vec4_t point_b = { x1, y1, z1, w1 };
