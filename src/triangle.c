@@ -186,6 +186,28 @@ vec3_t barycentric_weights(vec2_t a, vec2_t b, vec2_t c, vec2_t p) {
     return weights;
 }
 
+void clamp_weights(vec3_t *input)
+{
+    float clamped_min = 0.0;
+    float clamped_max = 1.0;
+
+    if (input->x < clamped_min) {
+        input->x = clamped_min;
+    } else if (input->x > clamped_max) {
+        input->x = clamped_max;
+    }
+    if (input->y < clamped_min) {
+        input->y = clamped_min;
+    } else if (input->y > clamped_max) {
+        input->y = clamped_max;
+    }
+    if (input->z < clamped_min) {
+        input->z = clamped_min;
+    } else if (input->z > clamped_max) {
+        input->z = clamped_max;
+    }
+}
+
 // Function to draw the textured pixel at position (x,y) on screen, using interpolation
 // from 3 points of the triangle (points are a, b, and c).
 void draw_texel(int x, int y, uint32_t * texture,
@@ -196,7 +218,13 @@ void draw_texel(int x, int y, uint32_t * texture,
     vec2_t a = vec2_from_vec4(point_a);
     vec2_t b = vec2_from_vec4(point_b);
     vec2_t c = vec2_from_vec4(point_c);
+
+    // Note that because we truncate the x and y points coming into this function (from float to int),
+    // the x,y point might be *outside* the triangle, and so the alpha, beta, and gamma results
+    // that the barycentric_weights() function calculates might be outside [0,1].
+    // We take the lazy way out and clamp the weights to [0,1].
     vec3_t weights = barycentric_weights(a, b, c, p);
+    clamp_weights(&weights);
 
     float alpha = weights.x;
     float beta = weights.y;
