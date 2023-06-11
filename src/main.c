@@ -20,7 +20,10 @@ bool g_display_wireframe_lines = false;
 bool g_display_filled_trianges = false;
 bool g_display_texture = true;
 
-triangle_t *triangles_to_render = NULL;
+#define MAX_TRIANGLES_PER_MESH (10000)
+
+triangle_t triangles_to_render[MAX_TRIANGLES_PER_MESH];
+int num_triangles_to_render = 0;
 
 vec3_t camera_position = { .x = 0, .y = 0, .z = 0};
 
@@ -77,9 +80,9 @@ bool setup(void)
 
     //load_cube_mesh_data();
     //load_obj_file_data("./assets/cube.obj");
-    load_obj_file_data("./assets/f22.obj");
+    load_obj_file_data("./assets/drone.obj");
 
-    if (load_png_texture_data("./assets/f22.png") != true) {
+    if (load_png_texture_data("./assets/drone.png") != true) {
         fprintf(stderr, "Error: load_png_texture_data failed.\n");
         return false;
     }
@@ -169,8 +172,8 @@ void update(void)
     // How many ms have passed since we last were called?
     previous_frame_time = SDL_GetTicks();
 
-    // Initialize the array of triangles to render.
-    triangles_to_render = NULL;
+    // Reset the triangle counter for this tick.
+    num_triangles_to_render = 0;
 
     // Rotate the cube by a little bit in the y direction each frame.
     mesh.rotation.x += 0.01;
@@ -305,7 +308,14 @@ void update(void)
         };
 
         // Saves the projected triangle to the the array of triangles to render.
-        array_push(triangles_to_render, projected_triangle);
+        if (num_triangles_to_render < MAX_TRIANGLES_PER_MESH) {
+            triangles_to_render[num_triangles_to_render] = projected_triangle;
+            num_triangles_to_render++;
+        }
+        else {
+            fprintf(stderr, "ERROR: trying to render %d triangles, which is more than the max allowed: %d\n",
+                    num_triangles_to_render, MAX_TRIANGLES_PER_MESH);
+        }
     }
 }
 
@@ -319,9 +329,7 @@ void render(void)
     //draw_filled_triangle(300, 100, 50, 400, 500, 700, 0xFF00FF00);
 
     // triangles_to_render is already sorted from back to front.
-    int num_triangles = array_length(triangles_to_render);
-
-    for (int ii=0; ii < num_triangles; ii++) {
+    for (int ii=0; ii < num_triangles_to_render; ii++) {
         triangle_t triangle = triangles_to_render[ii];
 
         if (g_display_filled_trianges) {
@@ -383,10 +391,6 @@ void render(void)
             draw_rect(triangle.points[2].x, triangle.points[2].y, 3, 3, 0xFFFF0000);
         }
     }
-
-    // Now that we've rendered the triagles into the frame buffer, 
-    // clear the triangle array.
-    array_free(triangles_to_render);
 
     render_color_buffer();
 
