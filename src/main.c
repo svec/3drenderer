@@ -187,8 +187,8 @@ void update(void)
 
     // Rotate the cube by a little bit in the y direction each frame.
     mesh.rotation.x += 0.01;
-    mesh.rotation.y += 0.01;
-    mesh.rotation.z += 0.01;
+    //mesh.rotation.y += 0.01;
+    //mesh.rotation.z += 0.01;
 
     //mesh.scale.x += 0.0002;
     //mesh.scale.y += 0.0001;

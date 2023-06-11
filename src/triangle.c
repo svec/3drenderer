@@ -186,28 +186,6 @@ vec3_t barycentric_weights(vec2_t a, vec2_t b, vec2_t c, vec2_t p) {
     return weights;
 }
 
-void clamp_weights(vec3_t *input)
-{
-    float clamped_min = 0.0;
-    float clamped_max = 1.0;
-
-    if (input->x < clamped_min) {
-        input->x = clamped_min;
-    } else if (input->x > clamped_max) {
-        input->x = clamped_max;
-    }
-    if (input->y < clamped_min) {
-        input->y = clamped_min;
-    } else if (input->y > clamped_max) {
-        input->y = clamped_max;
-    }
-    if (input->z < clamped_min) {
-        input->z = clamped_min;
-    } else if (input->z > clamped_max) {
-        input->z = clamped_max;
-    }
-}
-
 // Function to draw the textured pixel at position (x,y) on screen, using interpolation
 // from 3 points of the triangle (points are a, b, and c).
 void draw_texel(int x, int y, uint32_t * texture,
@@ -222,9 +200,10 @@ void draw_texel(int x, int y, uint32_t * texture,
     // Note that because we truncate the x and y points coming into this function (from float to int),
     // the x,y point might be *outside* the triangle, and so the alpha, beta, and gamma results
     // that the barycentric_weights() function calculates might be outside [0,1].
-    // We take the lazy way out and clamp the weights to [0,1].
+    // We take the lazy way out and clamp the weights to [0,1] by using the "% texture_width" and
+    // "% texture_height" below when we use the interpolated u and v values to index into the
+    // texture array.
     vec3_t weights = barycentric_weights(a, b, c, p);
-    clamp_weights(&weights);
 
     float alpha = weights.x;
     float beta = weights.y;
@@ -233,7 +212,7 @@ void draw_texel(int x, int y, uint32_t * texture,
     // u, v, and 1/w used for interpolation.
     float interpolated_u;
     float interpolated_v;
-    float interpolated_reciprocol_w; // W (z depth) is not linear with perspective, but 1/w (the reciprocol) is.
+    float interpolated_reciprocal_w; // W (z depth) is not linear with perspective, but 1/w (the reciprocal) is.
 
     // Interpolate the u and v values using barycentric weights (alpha, beta, and gamma) and also 1/w.
     // We use 1/w to get the perspective depth correct.
@@ -241,18 +220,19 @@ void draw_texel(int x, int y, uint32_t * texture,
     interpolated_v = ((a_uv.v / point_a.w) * alpha) + ((b_uv.v / point_b.w) * beta) + ((c_uv.v / point_c.w) * gamma);
 
     // Interpolate 1/w for the current pixel.
-    interpolated_reciprocol_w = ((1 / point_a.w) * alpha) + ((1 / point_b.w) * beta) + ((1 / point_c.w) * gamma);
+    interpolated_reciprocal_w = ((1 / point_a.w) * alpha) + ((1 / point_b.w) * beta) + ((1 / point_c.w) * gamma);
 
-    // Now divide by w to get back to "normal" depth (instead of 1/w inverted (or reciprocol) depth).
-    interpolated_u /= interpolated_reciprocol_w;
-    interpolated_v /= interpolated_reciprocol_w;
+    // Now divide by w to get back to "normal" depth (instead of 1/w inverted (or reciprocal) depth).
+    interpolated_u /= interpolated_reciprocal_w;
+    interpolated_v /= interpolated_reciprocal_w;
 
     // Map the interpolated u and v values to the right pixel in the texture.
-    int texture_x = abs( (int)(interpolated_u * texture_width));
-    int texture_y = abs( (int)(interpolated_v * texture_height));
-    // Note: there's a bug here, but supposedly it gets addressed late in
-    // the class, so I'm leaving it as-is. The bug is a crash because 
-    // of a bad memory access in the texture[] array.
+    // We use the "% texture_width" and "% texture_height" at the end to clamp
+    // the values to be within the texture[] structure, which is 
+    // texture_width * texture_height large.
+	int texture_x = abs((int)(interpolated_u * texture_width)) % texture_width;
+    int texture_y = abs((int)(interpolated_v * texture_height)) % texture_height;
+
     if ((texture_x > texture_width) || (texture_y > texture_height)) {
         printf("ERROR: texture x or y too big: %d, %d\n", texture_x, texture_y);
         printf("       interpolated u, v: %f, %f\n", interpolated_u, interpolated_v);
@@ -267,16 +247,16 @@ void draw_texel(int x, int y, uint32_t * texture,
 
     // Adjust 1/w so the pixels that are closer to the camera have smaller values than
     // pixels farther from the camera.
-    // After this change, interpolated_reciprocol_w will == 0.0 right at the camera,
+    // After this change, interpolated_reciprocal_w will == 0.0 right at the camera,
     // and == 1.0 at the farthest away point from the camera.
-    interpolated_reciprocol_w = 1.0 - interpolated_reciprocol_w;
+    interpolated_reciprocal_w = 1.0 - interpolated_reciprocal_w;
 
     // Only draw the pixel if it's in front of whatever is already in the z buffer.
-    if (interpolated_reciprocol_w < z_buffer[z_buffer_index]) {
+    if (interpolated_reciprocal_w < z_buffer[z_buffer_index]) {
         draw_pixel(x, y, texture[texture_array_index]);
 
         // Update z buffer with the 1/w inverted depth value.
-        z_buffer[z_buffer_index] = interpolated_reciprocol_w;
+        z_buffer[z_buffer_index] = interpolated_reciprocal_w;
     }
 }
 
