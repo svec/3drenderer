@@ -15,8 +15,8 @@
 
 int previous_frame_time = 0;
 bool g_display_back_face_culling = true;
-bool g_display_vertex_dot = true;
-bool g_display_wireframe_lines = true;
+bool g_display_vertex_dot = false;
+bool g_display_wireframe_lines = false;
 bool g_display_filled_trianges = false;
 bool g_display_texture = true;
 
@@ -34,6 +34,13 @@ bool setup(void)
     
     if (!color_buffer) {
         fprintf(stderr, "Error: malloc failed for color_buffer.\n");
+        return false;
+    }
+
+    z_buffer = (float *)malloc(window_width * window_height * sizeof(float));
+
+    if (!z_buffer) {
+        fprintf(stderr, "Error: malloc failed for z_buffer.\n");
         return false;
     }
 
@@ -69,10 +76,10 @@ bool setup(void)
     
 
     //load_cube_mesh_data();
-    load_obj_file_data("./assets/cube.obj");
-    //load_obj_file_data("./assets/f22.obj");
+    //load_obj_file_data("./assets/cube.obj");
+    load_obj_file_data("./assets/f22.obj");
 
-    if (load_png_texture_data("./assets/cube.png") != true) {
+    if (load_png_texture_data("./assets/f22.png") != true) {
         fprintf(stderr, "Error: load_png_texture_data failed.\n");
         return false;
     }
@@ -400,6 +407,7 @@ void render(void)
     render_color_buffer();
 
     clear_color_buffer(0xFF000000);
+    clear_z_buffer();
 
     SDL_RenderPresent(renderer);
 }
@@ -412,6 +420,11 @@ void free_resources(void)
     if (color_buffer) {
         free(color_buffer);
         color_buffer = NULL;
+    }
+
+    if (z_buffer) {
+        free(z_buffer);
+        z_buffer = NULL;
     }
 
     if (png_texture) {

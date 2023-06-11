@@ -260,7 +260,24 @@ void draw_texel(int x, int y, uint32_t * texture,
 
     uint32_t texture_array_index = (texture_width * texture_y) + texture_x;
 
-    draw_pixel(x, y, texture[texture_array_index]);
+    int z_buffer_index = (window_width * y) + x;
+    if (z_buffer_index >= (window_height * window_width)) {
+        printf("ERROR: z_buffer_index is too big: %d, used x:%d y:%d\n", z_buffer_index, x, y);
+    }
+
+    // Adjust 1/w so the pixels that are closer to the camera have smaller values than
+    // pixels farther from the camera.
+    // After this change, interpolated_reciprocol_w will == 0.0 right at the camera,
+    // and == 1.0 at the farthest away point from the camera.
+    interpolated_reciprocol_w = 1.0 - interpolated_reciprocol_w;
+
+    // Only draw the pixel if it's in front of whatever is already in the z buffer.
+    if (interpolated_reciprocol_w < z_buffer[z_buffer_index]) {
+        draw_pixel(x, y, texture[texture_array_index]);
+
+        // Update z buffer with the 1/w inverted depth value.
+        z_buffer[z_buffer_index] = interpolated_reciprocol_w;
+    }
 }
 
 

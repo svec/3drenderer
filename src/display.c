@@ -6,6 +6,8 @@ SDL_Renderer * renderer = NULL;
 SDL_Texture * color_buffer_texture = NULL;
 uint32_t * color_buffer = NULL;
 
+float * z_buffer = NULL;
+
 int window_width = 800;
 int window_height = 600;
 
@@ -72,6 +74,19 @@ void clear_color_buffer(uint32_t color)
     for (int y = 0; y < window_height; y++) {
         for (int x = 0; x < window_width; x++) {
             draw_pixel(x, y, color);
+        }
+    }
+}
+
+void clear_z_buffer(void)
+{
+    // Note that we clear the z buffer by setting the values to 1.0.
+    // Since we use 1/w (the inverted depth value) instead of the non-inverted
+    // depth (because 1/w is linear, but w is not), 1.0 is maximum depth,
+    // not 0.0.
+    for (int y = 0; y < window_height; y++) {
+        for (int x = 0; x < window_width; x++) {
+            z_buffer[(y * window_width) + x] = 1.0;
         }
     }
 }
