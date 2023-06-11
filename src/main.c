@@ -156,19 +156,6 @@ void process_input(void)
     }
 }
 
-int compare_triangles(const void * a, const void * b)
-{
-    triangle_t * p1 = (triangle_t *)a;
-    triangle_t * p2 = (triangle_t *)b;
-
-    if (p1->avg_depth < p2->avg_depth) {
-        return 1;
-    } else if (p1->avg_depth > p2->avg_depth) {
-        return -1;
-    }
-    return 0;
-}
-
 void update(void)
 {
     // Do we need to delay before updating the frame?
@@ -187,8 +174,8 @@ void update(void)
 
     // Rotate the cube by a little bit in the y direction each frame.
     mesh.rotation.x += 0.01;
-    //mesh.rotation.y += 0.01;
-    //mesh.rotation.z += 0.01;
+    mesh.rotation.y += 0.01;
+    mesh.rotation.z += 0.01;
 
     //mesh.scale.x += 0.0002;
     //mesh.scale.y += 0.0001;
@@ -291,10 +278,6 @@ void update(void)
             projected_points[vertex_i].y += (window_height / 2.0); // translate to center of window
         }
 
-        // Calculate the average z depth for each triangle now that all transformations are done.
-        // Using a very naive definition of triangle depth: just average all 3 z points.
-        float avg_depth = (transformed_vertices[0].z + transformed_vertices[1].z + transformed_vertices[2].z) / 3.0;
-
         // Calculate the triangle color based on the original triangle color and the angle of the light 
         // on the triangle.
         // We compare the light ray's direction and the triangle face normal vector to see how aligned the triangle is 
@@ -319,16 +302,11 @@ void update(void)
                 {mesh_face.c_uv.u, mesh_face.c_uv.v},
             },
             .color = triangle_color,
-            .avg_depth = avg_depth
         };
 
         // Saves the projected triangle to the the array of triangles to render.
         array_push(triangles_to_render, projected_triangle);
     }
-
-    // Sort the triangles_to_render by average depth so we can use the Painters Algorithm
-    // to draw the furthest away triangles before nearer triangles.
-    qsort(triangles_to_render, array_length(triangles_to_render), sizeof(triangle_t), compare_triangles);
 }
 
 void render(void)
@@ -350,10 +328,16 @@ void render(void)
             draw_filled_triangle(
                 triangle.points[0].x,
                 triangle.points[0].y,
+                triangle.points[0].z,
+                triangle.points[0].w,
                 triangle.points[1].x,
                 triangle.points[1].y,
+                triangle.points[1].z,
+                triangle.points[1].w,
                 triangle.points[2].x,
                 triangle.points[2].y,
+                triangle.points[2].z,
+                triangle.points[2].w,
                 triangle.color);
         }
 
