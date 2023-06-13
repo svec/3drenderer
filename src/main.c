@@ -72,10 +72,10 @@ bool setup(void)
     proj_matrix = mat4_make_projection(fov, aspect, znear, zfar);
 
     //load_cube_mesh_data();
-    load_obj_file_data("./assets/cube.obj");
-    //load_obj_file_data("./assets/efa.obj");
+    //load_obj_file_data("./assets/cube.obj");
+    load_obj_file_data("./assets/efa.obj");
 
-    if (load_png_texture_data("./assets/cube.png") != true) {
+    if (load_png_texture_data("./assets/efa.png") != true) {
         fprintf(stderr, "Error: load_png_texture_data failed.\n");
         return false;
     }
@@ -142,8 +142,29 @@ void process_input(void)
             if (event.key.keysym.sym == SDLK_c) {
                 g_display_back_face_culling = true;
             }
-            if (event.key.keysym.sym == SDLK_d) {
+            if (event.key.keysym.sym == SDLK_x) {
                 g_display_back_face_culling = false;
+            }
+
+            if (event.key.keysym.sym == SDLK_UP) {
+                camera.position.y += 3.0 * delta_time_s;
+            }
+            if (event.key.keysym.sym == SDLK_DOWN) {
+                camera.position.y -= 3.0 * delta_time_s;
+            }
+            if (event.key.keysym.sym == SDLK_a) {
+                camera.yaw -= 1.0 * delta_time_s;
+            }
+            if (event.key.keysym.sym == SDLK_d) {
+                camera.yaw += 1.0 * delta_time_s;
+            }
+            if (event.key.keysym.sym == SDLK_w) {
+                camera.forward_velocity = vec3_mul(camera.direction, 5.0 * delta_time_s);
+                camera.position = vec3_add(camera.position, camera.forward_velocity);
+            }
+            if (event.key.keysym.sym == SDLK_s) {
+                camera.forward_velocity = vec3_mul(camera.direction, 5.0 * delta_time_s);
+                camera.position = vec3_sub(camera.position, camera.forward_velocity);
             }
             break;
         default:
@@ -172,9 +193,9 @@ void update(void)
     num_triangles_to_render = 0;
 
     // Rotate the cube by a little bit in the y direction each frame.
-    mesh.rotation.x += 0.6 * delta_time_s;
-    mesh.rotation.y += 0.6 * delta_time_s;
-    mesh.rotation.z += 0.6 * delta_time_s;
+    //mesh.rotation.x += 0.6 * delta_time_s;
+    //mesh.rotation.y += 0.6 * delta_time_s;
+    //mesh.rotation.z += 0.6 * delta_time_s;
 
     //mesh.scale.x += 0.02 * delta_time_s;
     //mesh.scale.y += 0.01 * delta_time_s;
@@ -191,9 +212,18 @@ void update(void)
     // Translate the vertex away from the camera.
     mesh.translation.z = 5.0; 
 
-    // Create the view matrix using a hardcoded target point.
-    vec3_t target = {0, 0, 4.0};
-    vec3_t up_direction = {0, 1, 0};
+    // Create the view matrix using the current camera position and target.
+
+    // Initialize the target as the z axis direction.
+    vec3_t target = {0, 0, 1.0};
+
+    mat4_t camera_yaw_rotation = mat4_make_rotation_y(camera.yaw);
+    camera.direction = vec3_from_vec4(mat4_mul_vec4(camera_yaw_rotation, vec4_from_vec3(target)));
+
+    // Offset the camera position in the direction in which the camera is looking.
+    target = vec3_add(camera.position, camera.direction);
+
+    vec3_t up_direction = {0, 1, 0}; // normalized y axis
     mat4_t view_matrix = mat4_look_at(camera.position, target, up_direction);
 
     // Create scale, translation, and rotation matrices that will be used to multiply the mesh vertices.
@@ -202,7 +232,6 @@ void update(void)
     mat4_t rotation_matrix_x = mat4_make_rotation_x(mesh.rotation.x);
     mat4_t rotation_matrix_y = mat4_make_rotation_y(mesh.rotation.y);
     mat4_t rotation_matrix_z = mat4_make_rotation_z(mesh.rotation.z);
-
 
     // Loop all triangle faces.
     int num_faces = array_length(mesh.faces);
