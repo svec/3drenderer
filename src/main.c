@@ -15,6 +15,7 @@
 #include "camera.h"
 
 int previous_frame_time = 0;
+float delta_time_s = 0;
 bool g_display_back_face_culling = true;
 bool g_display_vertex_dot = false;
 bool g_display_wireframe_lines = false;
@@ -71,10 +72,10 @@ bool setup(void)
     proj_matrix = mat4_make_projection(fov, aspect, znear, zfar);
 
     //load_cube_mesh_data();
-    //load_obj_file_data("./assets/cube.obj");
-    load_obj_file_data("./assets/efa.obj");
+    load_obj_file_data("./assets/cube.obj");
+    //load_obj_file_data("./assets/efa.obj");
 
-    if (load_png_texture_data("./assets/efa.png") != true) {
+    if (load_png_texture_data("./assets/cube.png") != true) {
         fprintf(stderr, "Error: load_png_texture_data failed.\n");
         return false;
     }
@@ -161,6 +162,9 @@ void update(void)
         SDL_Delay(time_to_wait_ms);
     }
 
+    // Get the time in seconds that's passed since we rendered the last frame.
+    delta_time_s = (SDL_GetTicks() - previous_frame_time) / 1000.0;
+
     // How many ms have passed since we last were called?
     previous_frame_time = SDL_GetTicks();
 
@@ -168,21 +172,21 @@ void update(void)
     num_triangles_to_render = 0;
 
     // Rotate the cube by a little bit in the y direction each frame.
-    //mesh.rotation.x += 0.01;
-    //mesh.rotation.y += 0.01;
-    //mesh.rotation.z += 0.01;
+    mesh.rotation.x += 0.6 * delta_time_s;
+    mesh.rotation.y += 0.6 * delta_time_s;
+    mesh.rotation.z += 0.6 * delta_time_s;
 
-    //mesh.scale.x += 0.0002;
-    //mesh.scale.y += 0.0001;
-    //mesh.scale.z += 0.0003;
+    //mesh.scale.x += 0.02 * delta_time_s;
+    //mesh.scale.y += 0.01 * delta_time_s;
+    //mesh.scale.z += 0.03 * delta_time_s;
 
-    //mesh.translation.x += 0.001;
-    //mesh.translation.y += 0.002;
+    //mesh.translation.x += 0.1 * delta_time_s;
+    //mesh.translation.y += 0.2 * delta_time_s;
 
     // Change the camera position per camera frame.
-    camera.position.x += 0.008;
-    camera.position.y += 0.008;
-    //camera.position.z += 0.008;
+    //camera.position.x += 0.5 * delta_time_s;
+    //camera.position.y += 0.5 * delta_time_s;
+    //camera.position.z += 0.5 * delta_time_s;
 
     // Translate the vertex away from the camera.
     mesh.translation.z = 5.0; 
