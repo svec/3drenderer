@@ -70,15 +70,6 @@ bool setup(void)
     float zfar = 100.0;
     proj_matrix = mat4_make_projection(fov, aspect, znear, zfar);
 
-#if 0
-    // Manually load the hardcoded texture data from the static array.
-    // The REDBRICK_TEXTURE array is uint8_t's, cast it to uint32_t.
-    mesh_texture = (uint32_t *)REDBRICK_TEXTURE;
-    texture_width = 64;
-    texture_height = 64;
-#endif
-    
-
     //load_cube_mesh_data();
     //load_obj_file_data("./assets/cube.obj");
     load_obj_file_data("./assets/efa.obj");
