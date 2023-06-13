@@ -12,6 +12,7 @@
 #include "light.h"
 #include "texture.h"
 #include "upng.h"
+#include "camera.h"
 
 int previous_frame_time = 0;
 bool g_display_back_face_culling = true;
@@ -25,9 +26,9 @@ bool g_display_texture = true;
 triangle_t triangles_to_render[MAX_TRIANGLES_PER_MESH];
 int num_triangles_to_render = 0;
 
-vec3_t camera_position = { .x = 0, .y = 0, .z = 0};
-
 mat4_t proj_matrix;
+mat4_t world_matrix;
+mat4_t view_matrix;
 
 bool is_running = false;
 
@@ -80,9 +81,9 @@ bool setup(void)
 
     //load_cube_mesh_data();
     //load_obj_file_data("./assets/cube.obj");
-    load_obj_file_data("./assets/drone.obj");
+    load_obj_file_data("./assets/efa.obj");
 
-    if (load_png_texture_data("./assets/drone.png") != true) {
+    if (load_png_texture_data("./assets/efa.png") != true) {
         fprintf(stderr, "Error: load_png_texture_data failed.\n");
         return false;
     }
@@ -176,9 +177,9 @@ void update(void)
     num_triangles_to_render = 0;
 
     // Rotate the cube by a little bit in the y direction each frame.
-    mesh.rotation.x += 0.01;
-    mesh.rotation.y += 0.01;
-    mesh.rotation.z += 0.01;
+    //mesh.rotation.x += 0.01;
+    //mesh.rotation.y += 0.01;
+    //mesh.rotation.z += 0.01;
 
     //mesh.scale.x += 0.0002;
     //mesh.scale.y += 0.0001;
@@ -187,9 +188,18 @@ void update(void)
     //mesh.translation.x += 0.001;
     //mesh.translation.y += 0.002;
 
+    // Change the camera position per camera frame.
+    camera.position.x += 0.008;
+    camera.position.y += 0.008;
+    //camera.position.z += 0.008;
 
     // Translate the vertex away from the camera.
     mesh.translation.z = 5.0; 
+
+    // Create the view matrix using a hardcoded target point.
+    vec3_t target = {0, 0, 4.0};
+    vec3_t up_direction = {0, 1, 0};
+    mat4_t view_matrix = mat4_look_at(camera.position, target, up_direction);
 
     // Create scale, translation, and rotation matrices that will be used to multiply the mesh vertices.
     mat4_t scale_matrix = mat4_make_scale(mesh.scale.x, mesh.scale.y, mesh.scale.z);
@@ -197,6 +207,7 @@ void update(void)
     mat4_t rotation_matrix_x = mat4_make_rotation_x(mesh.rotation.x);
     mat4_t rotation_matrix_y = mat4_make_rotation_y(mesh.rotation.y);
     mat4_t rotation_matrix_z = mat4_make_rotation_z(mesh.rotation.z);
+
 
     // Loop all triangle faces.
     int num_faces = array_length(mesh.faces);
@@ -219,7 +230,7 @@ void update(void)
 
             // Creating a single World Matrix combining the scale, rotation, and translation matrices.
             // Note that the order matters: Must be scale first, then rotation, and finally translation last.
-            mat4_t world_matrix = mat4_identity();
+            world_matrix = mat4_identity();
             world_matrix = mat4_mul_mat4(scale_matrix, world_matrix);
             world_matrix = mat4_mul_mat4(rotation_matrix_x, world_matrix);
             world_matrix = mat4_mul_mat4(rotation_matrix_y, world_matrix);
@@ -228,6 +239,9 @@ void update(void)
 
             // Multiply (apply) the World Matrix by the vertex to get the transformed vertex.
             transformed_vertex = mat4_mul_vec4(world_matrix, transformed_vertex);
+
+            // Multiply the view matrix by the vertex vector to transform the scene to camera space.
+            transformed_vertex = mat4_mul_vec4(view_matrix, transformed_vertex);
 
             // Save off the transformed vertex.
             transformed_vertices[vertex_i] = transformed_vertex;
@@ -250,8 +264,9 @@ void update(void)
         vec3_t normal = vec3_cross(vector_ab, vector_ac);
         vec3_normalize(&normal);
 
-        // Find the vector between a point in the triangle (point A) and the camera origin.
-        vec3_t camera_ray = vec3_sub(camera_position, vector_a);
+        // Find the vector between a point in the triangle (point A) and the axes origin.
+        vec3_t origin = {0, 0, 0};
+        vec3_t camera_ray = vec3_sub(origin, vector_a);
 
         // How aligned is the face's normal with the camera ray?
         float dot_normal_camera = vec3_dot(normal, camera_ray);
