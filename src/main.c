@@ -88,15 +88,21 @@ bool setup(void)
     }
 
     // Initialize the perspective projection matrix.
-    float fov = M_PI/3.0; // 60 degrees = 180/3, = PI/3 in radians
-    float aspect = (float)window_height / (float)window_width;
+    float aspect_x = (float)window_width / (float)window_height;
+    float aspect_y = (float)window_height / (float)window_width;
+    float fov_y = M_PI/3.0; // 60 degrees = 180/3, = PI/3 in radians
+
+    // Math for horizonal field of view comes from
+    // https://en.wikipedia.org/wiki/Field_of_view_in_video_games
+    float fov_x = 2.0 * atan(tan(fov_y/2.0) * aspect_x);
+
     float z_near = 0.1;
     float z_far = 100.0;
-    proj_matrix = mat4_make_projection(fov, aspect, z_near, z_far);
+    proj_matrix = mat4_make_projection(fov_y, aspect_y, z_near, z_far);
 
     // Initialize 6 frustum planes.
     // (left, right, top, bottom, front, back)
-    init_frustum_planes(fov, z_near, z_far);
+    init_frustum_planes(fov_x, fov_y, z_near, z_far);
 
     bool all_good = load_object();
 
