@@ -39,6 +39,7 @@ bool load_object(void)
     //load_cube_mesh_data();
     //load_obj_file_data("./assets/cube.obj");
     bool all_good = load_obj_file_data("./assets/cube.obj");
+    //bool all_good = load_obj_file_data("./assets/f22.obj");
 
     if (! all_good) {
         fprintf(stderr, "Error: load_obj_file_data failed.\n");
@@ -46,6 +47,7 @@ bool load_object(void)
     }
 
     all_good = load_png_texture_data("./assets/cube.png");
+    //all_good = load_png_texture_data("./assets/f22.png");
 
     if (! all_good) {
         fprintf(stderr, "Error: load_png_texture_data failed.\n");
@@ -331,7 +333,10 @@ void update(void)
         // First, create a polygon starting with the triangle.
         polygon_t polygon = create_polygon_from_triangle(vec3_from_vec4(transformed_vertices[0]),
                                                          vec3_from_vec4(transformed_vertices[1]),
-                                                         vec3_from_vec4(transformed_vertices[2]));
+                                                         vec3_from_vec4(transformed_vertices[2]),
+                                                         mesh_face.a_uv,
+                                                         mesh_face.b_uv,
+                                                         mesh_face.c_uv);
 
         // Now clip the polygon against the frustum so we only display things we can actually see.
         // Note that the polygon starts as a triangle, but the act of clipping it may turn it into
@@ -391,9 +396,9 @@ void update(void)
                     {projected_points[2].x, projected_points[2].y, projected_points[2].z, projected_points[2].w},
                 },
                 .texcoords = {
-                    {mesh_face.a_uv.u, mesh_face.a_uv.v},
-                    {mesh_face.b_uv.u, mesh_face.b_uv.v},
-                    {mesh_face.c_uv.u, mesh_face.c_uv.v},
+                    {triangle_after_clipping.texcoords[0].u, triangle_after_clipping.texcoords[0].v},
+                    {triangle_after_clipping.texcoords[1].u, triangle_after_clipping.texcoords[1].v},
+                    {triangle_after_clipping.texcoords[2].u, triangle_after_clipping.texcoords[2].v},
                 },
                 .color = triangle_color,
             };

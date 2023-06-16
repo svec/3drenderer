@@ -93,3 +93,9 @@ bool load_png_texture_data(char * filename)
 
     return all_good;
 }
+
+tex2_t tex2_clone(tex2_t *p)
+{
+    tex2_t result = {p->u, p->v};
+    return result;
+}
