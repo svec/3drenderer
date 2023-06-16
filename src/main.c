@@ -13,6 +13,7 @@
 #include "texture.h"
 #include "upng.h"
 #include "camera.h"
+#include "clipping.h"
 
 int previous_frame_time = 0;
 float delta_time_s = 0;
@@ -32,6 +33,28 @@ mat4_t world_matrix;
 mat4_t view_matrix;
 
 bool is_running = false;
+
+bool load_object(void)
+{
+    //load_cube_mesh_data();
+    //load_obj_file_data("./assets/cube.obj");
+    bool all_good = load_obj_file_data("./assets/cube.obj");
+
+    if (! all_good) {
+        fprintf(stderr, "Error: load_obj_file_data failed.\n");
+        return false;
+    }
+
+    all_good = load_png_texture_data("./assets/cube.png");
+
+    if (! all_good) {
+        fprintf(stderr, "Error: load_png_texture_data failed.\n");
+        return false;
+    }
+
+    return true;
+}
+
 
 bool setup(void)
 {
@@ -67,20 +90,17 @@ bool setup(void)
     // Initialize the perspective projection matrix.
     float fov = M_PI/3.0; // 60 degrees = 180/3, = PI/3 in radians
     float aspect = (float)window_height / (float)window_width;
-    float znear = 0.1;
-    float zfar = 100.0;
-    proj_matrix = mat4_make_projection(fov, aspect, znear, zfar);
+    float z_near = 0.1;
+    float z_far = 100.0;
+    proj_matrix = mat4_make_projection(fov, aspect, z_near, z_far);
 
-    //load_cube_mesh_data();
-    //load_obj_file_data("./assets/cube.obj");
-    load_obj_file_data("./assets/efa.obj");
+    // Initialize 6 frustum planes.
+    // (left, right, top, bottom, front, back)
+    init_frustum_planes(fov, z_near, z_far);
 
-    if (load_png_texture_data("./assets/efa.png") != true) {
-        fprintf(stderr, "Error: load_png_texture_data failed.\n");
-        return false;
-    }
+    bool all_good = load_object();
 
-    return true;
+    return all_good;
 }
 
 void process_input(void)
@@ -233,7 +253,7 @@ void update(void)
     mat4_t rotation_matrix_y = mat4_make_rotation_y(mesh.rotation.y);
     mat4_t rotation_matrix_z = mat4_make_rotation_z(mesh.rotation.z);
 
-    // Loop all triangle faces.
+    // Loop all triangle faces of the mesh.
     int num_faces = array_length(mesh.faces);
 
     for (int face_i=0; face_i < num_faces; face_i++) {
@@ -301,59 +321,88 @@ void update(void)
             continue;
         }
 
-        vec4_t projected_points[3];
+        // Clipping!
+        // First, create a polygon starting with the triangle.
+        polygon_t polygon = create_polygon_from_triangle(vec3_from_vec4(transformed_vertices[0]),
+                                                         vec3_from_vec4(transformed_vertices[1]),
+                                                         vec3_from_vec4(transformed_vertices[2]));
 
-        for (int vertex_i = 0; vertex_i < 3; vertex_i++) {
-            // Project the current vertex.
-            projected_points[vertex_i] = mat4_mul_vec4_project(proj_matrix, transformed_vertices[vertex_i]);
+        // Now clip the polygon against the frustum so we only display things we can actually see.
+        // Note that the polygon starts as a triangle, but the act of clipping it may turn it into
+        // a polygon with more than just 3 points. It could also be empty if the entire polygon 
+        // is clipped!
+        clip_polygon(&polygon); // Note the polygon structure is modified inside clip_polygon().
 
-            // Scale into the view.
-            projected_points[vertex_i].x *= (window_width / 2.0);
-            projected_points[vertex_i].y *= (window_height / 2.0);
+        // After the polygon has been clipped, we'll need to break it up into triangles for projection
+        // and display.
+        triangle_t triangles_after_clipping[MAX_NUM_POLY_TRIANGLES];
+        int num_triangles_after_clipping = 0;
 
-            // Invert the y values to account for flipped screen y coordinate: in our object coordinate system,
-            // y increases going "up" the screen, but in SDL the y increases going "down" the screen.
-            projected_points[vertex_i].y *= -1.0;
+        triangles_from_polygon(&polygon, triangles_after_clipping, &num_triangles_after_clipping);
 
-            // Translate the projected points to the middle of the screen.
-            projected_points[vertex_i].x += (window_width / 2.0);  // translate to center of window
-            projected_points[vertex_i].y += (window_height / 2.0); // translate to center of window
-        }
+        // Now that we have the array of triangles to display after being clipped, loop through
+        // all the triangles to project them.
+        for (int tri = 0; tri < num_triangles_after_clipping; tri++) {
 
-        // Calculate the triangle color based on the original triangle color and the angle of the light 
-        // on the triangle.
-        // We compare the light ray's direction and the triangle face normal vector to see how aligned the triangle is 
-        // with the light. The more aligned the triangle face is with the light, the more the light will
-        // brighten the triangle.
-        // We use the negative of the dot product because we actually care about the opposite of the light
-        // direction: we want max light if the normal is pointed directly opposite the light direction.
-        // Using the negative of the dot product does this.
-        float light_intensity_factor = -vec3_dot(normal, light.direction);
-        uint32_t triangle_color = light_apply_intensity(mesh_face.color, light_intensity_factor);
-        //uint32_t triangle_color = mesh_face.color;
+            triangle_t triangle_after_clipping = triangles_after_clipping[tri];
 
-        triangle_t projected_triangle = {
-            .points = {
-                {projected_points[0].x, projected_points[0].y, projected_points[0].z, projected_points[0].w},
-                {projected_points[1].x, projected_points[1].y, projected_points[1].z, projected_points[1].w},
-                {projected_points[2].x, projected_points[2].y, projected_points[2].z, projected_points[2].w},
-            },
-            .texcoords = {
-                {mesh_face.a_uv.u, mesh_face.a_uv.v},
-                {mesh_face.b_uv.u, mesh_face.b_uv.v},
-                {mesh_face.c_uv.u, mesh_face.c_uv.v},
-            },
-            .color = triangle_color,
-        };
+            vec4_t projected_points[3];
 
-        // Saves the projected triangle to the the array of triangles to render.
-        if (num_triangles_to_render < MAX_TRIANGLES_PER_MESH) {
-            triangles_to_render[num_triangles_to_render] = projected_triangle;
-            num_triangles_to_render++;
-        }
-        else {
-            fprintf(stderr, "ERROR: trying to render %d triangles, which is more than the max allowed: %d\n",
-                    num_triangles_to_render, MAX_TRIANGLES_PER_MESH);
+            for (int vertex_i = 0; vertex_i < 3; vertex_i++)
+            {
+                // Project the current vertex.
+                projected_points[vertex_i] = mat4_mul_vec4_project(proj_matrix, triangle_after_clipping.points[vertex_i]);
+
+                // Scale into the view.
+                projected_points[vertex_i].x *= (window_width / 2.0);
+                projected_points[vertex_i].y *= (window_height / 2.0);
+
+                // Invert the y values to account for flipped screen y coordinate: in our object coordinate system,
+                // y increases going "up" the screen, but in SDL the y increases going "down" the screen.
+                projected_points[vertex_i].y *= -1.0;
+
+                // Translate the projected points to the middle of the screen.
+                projected_points[vertex_i].x += (window_width / 2.0);  // translate to center of window
+                projected_points[vertex_i].y += (window_height / 2.0); // translate to center of window
+            }
+
+            // Calculate the triangle color based on the original triangle color and the angle of the light
+            // on the triangle.
+            // We compare the light ray's direction and the triangle face normal vector to see how aligned the triangle is
+            // with the light. The more aligned the triangle face is with the light, the more the light will
+            // brighten the triangle.
+            // We use the negative of the dot product because we actually care about the opposite of the light
+            // direction: we want max light if the normal is pointed directly opposite the light direction.
+            // Using the negative of the dot product does this.
+            float light_intensity_factor = -vec3_dot(normal, light.direction);
+            uint32_t triangle_color = light_apply_intensity(mesh_face.color, light_intensity_factor);
+            // uint32_t triangle_color = mesh_face.color;
+
+            triangle_t triangle_to_render = {
+                .points = {
+                    {projected_points[0].x, projected_points[0].y, projected_points[0].z, projected_points[0].w},
+                    {projected_points[1].x, projected_points[1].y, projected_points[1].z, projected_points[1].w},
+                    {projected_points[2].x, projected_points[2].y, projected_points[2].z, projected_points[2].w},
+                },
+                .texcoords = {
+                    {mesh_face.a_uv.u, mesh_face.a_uv.v},
+                    {mesh_face.b_uv.u, mesh_face.b_uv.v},
+                    {mesh_face.c_uv.u, mesh_face.c_uv.v},
+                },
+                .color = triangle_color,
+            };
+
+            // Saves the projected triangle to the the array of triangles to render.
+            if (num_triangles_to_render < MAX_TRIANGLES_PER_MESH)
+            {
+                triangles_to_render[num_triangles_to_render] = triangle_to_render;
+                num_triangles_to_render++;
+            }
+            else
+            {
+                fprintf(stderr, "ERROR: trying to render %d triangles, which is more than the max allowed: %d\n",
+                        num_triangles_to_render, MAX_TRIANGLES_PER_MESH);
+            }
         }
     }
 }
