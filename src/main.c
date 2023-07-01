@@ -34,7 +34,7 @@ mat4_t view_matrix;
 
 bool is_running = false;
 
-bool load_object(void)
+bool load_object_to_display(void)
 {
     //load_cube_mesh_data();
     //load_obj_file_data("./assets/cube.obj");
@@ -57,41 +57,11 @@ bool load_object(void)
     return true;
 }
 
-
 bool setup(void)
 {
-    color_buffer = (uint32_t *)malloc(window_width * window_height * sizeof(uint32_t));
-    
-    if (!color_buffer) {
-        fprintf(stderr, "Error: malloc failed for color_buffer.\n");
-        return false;
-    }
-
-    z_buffer = (float *)malloc(window_width * window_height * sizeof(float));
-
-    if (!z_buffer) {
-        fprintf(stderr, "Error: malloc failed for z_buffer.\n");
-        return false;
-    }
-
-    // Create a texture buffer that displays the color buffer.
-    color_buffer_texture = SDL_CreateTexture(
-        renderer,
-        //SDL_PIXELFORMAT_ARGB8888,
-        SDL_PIXELFORMAT_RGBA32,
-        SDL_TEXTUREACCESS_STREAMING,
-        window_width,
-        window_height
-    );
-
-    if (! color_buffer_texture) {
-        fprintf(stderr, "Error: SDL_CreateTexture failed\n");
-        return false;
-    }
-
     // Initialize the perspective projection matrix.
-    float aspect_x = (float)window_width / (float)window_height;
-    float aspect_y = (float)window_height / (float)window_width;
+    float aspect_x = (float)get_window_width() / (float)get_window_width();
+    float aspect_y = (float)get_window_width() / (float)get_window_width();
     float fov_y = M_PI/3.0; // 60 degrees = 180/3, = PI/3 in radians
 
     // Math for horizonal field of view comes from
@@ -106,7 +76,7 @@ bool setup(void)
     // (left, right, top, bottom, front, back)
     init_frustum_planes(fov_x, fov_y, z_near, z_far);
 
-    bool all_good = load_object();
+    bool all_good = load_object_to_display();
 
     return all_good;
 }
@@ -114,10 +84,11 @@ bool setup(void)
 void process_input(void)
 {
     SDL_Event event;
-    SDL_PollEvent(&event);
+    while (SDL_PollEvent(&event)) {
 
-    switch (event.type) {
-        case SDL_QUIT:  // User clicks window close button
+        switch (event.type)
+        {
+        case SDL_QUIT: // User clicks window close button
             is_running = false;
             break;
         case SDL_KEYDOWN:
@@ -131,73 +102,88 @@ void process_input(void)
                 Pressing “c” we should enable back-face culling
                 Pressing “d” we should disable the back-face culling
                 */
-            if (event.key.keysym.sym == SDLK_ESCAPE) {
+            if (event.key.keysym.sym == SDLK_ESCAPE)
+            {
                 is_running = false;
             }
-            if (event.key.keysym.sym == SDLK_1) {
+            if (event.key.keysym.sym == SDLK_1)
+            {
                 g_display_vertex_dot = true;
                 g_display_wireframe_lines = true;
             }
-            if (event.key.keysym.sym == SDLK_2) {
+            if (event.key.keysym.sym == SDLK_2)
+            {
                 g_display_vertex_dot = false;
                 g_display_wireframe_lines = true;
                 g_display_filled_trianges = false;
             }
-            if (event.key.keysym.sym == SDLK_3) {
+            if (event.key.keysym.sym == SDLK_3)
+            {
                 g_display_vertex_dot = false;
                 g_display_wireframe_lines = false;
                 g_display_filled_trianges = true;
                 g_display_texture = false;
             }
-            if (event.key.keysym.sym == SDLK_4) {
+            if (event.key.keysym.sym == SDLK_4)
+            {
                 g_display_vertex_dot = false;
                 g_display_wireframe_lines = true;
                 g_display_filled_trianges = true;
                 g_display_texture = false;
             }
-            if (event.key.keysym.sym == SDLK_5) {
+            if (event.key.keysym.sym == SDLK_5)
+            {
                 g_display_vertex_dot = false;
                 g_display_wireframe_lines = false;
                 g_display_filled_trianges = false;
                 g_display_texture = true;
             }
-            if (event.key.keysym.sym == SDLK_6) {
+            if (event.key.keysym.sym == SDLK_6)
+            {
                 g_display_vertex_dot = false;
                 g_display_wireframe_lines = true;
                 g_display_filled_trianges = false;
                 g_display_texture = true;
             }
-            if (event.key.keysym.sym == SDLK_c) {
+            if (event.key.keysym.sym == SDLK_c)
+            {
                 g_display_back_face_culling = true;
             }
-            if (event.key.keysym.sym == SDLK_x) {
+            if (event.key.keysym.sym == SDLK_x)
+            {
                 g_display_back_face_culling = false;
             }
 
-            if (event.key.keysym.sym == SDLK_UP) {
+            if (event.key.keysym.sym == SDLK_UP)
+            {
                 camera.position.y += 3.0 * delta_time_s;
             }
-            if (event.key.keysym.sym == SDLK_DOWN) {
+            if (event.key.keysym.sym == SDLK_DOWN)
+            {
                 camera.position.y -= 3.0 * delta_time_s;
             }
-            if (event.key.keysym.sym == SDLK_a) {
+            if (event.key.keysym.sym == SDLK_a)
+            {
                 camera.yaw -= 1.0 * delta_time_s;
             }
-            if (event.key.keysym.sym == SDLK_d) {
+            if (event.key.keysym.sym == SDLK_d)
+            {
                 camera.yaw += 1.0 * delta_time_s;
             }
-            if (event.key.keysym.sym == SDLK_w) {
+            if (event.key.keysym.sym == SDLK_w)
+            {
                 camera.forward_velocity = vec3_mul(camera.direction, 5.0 * delta_time_s);
                 camera.position = vec3_add(camera.position, camera.forward_velocity);
             }
-            if (event.key.keysym.sym == SDLK_s) {
+            if (event.key.keysym.sym == SDLK_s)
+            {
                 camera.forward_velocity = vec3_mul(camera.direction, 5.0 * delta_time_s);
                 camera.position = vec3_sub(camera.position, camera.forward_velocity);
             }
             break;
         default:
             break;
-
+        }
     }
 }
 
@@ -365,16 +351,16 @@ void update(void)
                 projected_points[vertex_i] = mat4_mul_vec4_project(proj_matrix, triangle_after_clipping.points[vertex_i]);
 
                 // Scale into the view.
-                projected_points[vertex_i].x *= (window_width / 2.0);
-                projected_points[vertex_i].y *= (window_height / 2.0);
+                projected_points[vertex_i].x *= (get_window_width() / 2.0);
+                projected_points[vertex_i].y *= (get_window_width() / 2.0);
 
                 // Invert the y values to account for flipped screen y coordinate: in our object coordinate system,
                 // y increases going "up" the screen, but in SDL the y increases going "down" the screen.
                 projected_points[vertex_i].y *= -1.0;
 
                 // Translate the projected points to the middle of the screen.
-                projected_points[vertex_i].x += (window_width / 2.0);  // translate to center of window
-                projected_points[vertex_i].y += (window_height / 2.0); // translate to center of window
+                projected_points[vertex_i].x += (get_window_width() / 2.0);  // translate to center of window
+                projected_points[vertex_i].y += (get_window_width() / 2.0); // translate to center of window
             }
 
             // Calculate the triangle color based on the original triangle color and the angle of the light
@@ -420,6 +406,9 @@ void update(void)
 
 void render(void)
 {
+    clear_color_buffer(0xFF000000);
+    clear_z_buffer();
+
     draw_grid();
 
     // Loop all projected triangles and render them.
@@ -492,27 +481,12 @@ void render(void)
     }
 
     render_color_buffer();
-
-    clear_color_buffer(0xFF000000);
-    clear_z_buffer();
-
-    SDL_RenderPresent(renderer);
 }
 
 void free_resources(void)
 {
     array_free(mesh.faces);
     array_free(mesh.vertices);
-
-    if (color_buffer) {
-        free(color_buffer);
-        color_buffer = NULL;
-    }
-
-    if (z_buffer) {
-        free(z_buffer);
-        z_buffer = NULL;
-    }
 
     if (png_texture) {
         upng_free(png_texture);

@@ -1,17 +1,27 @@
 #include "display.h"
 
-SDL_Window * window = NULL;
-SDL_Renderer * renderer = NULL;
+static SDL_Window * window = NULL;
+static SDL_Renderer * renderer = NULL;
 
-SDL_Texture * color_buffer_texture = NULL;
-uint32_t * color_buffer = NULL;
+static SDL_Texture * color_buffer_texture = NULL;
+static uint32_t * color_buffer = NULL;
 
-float * z_buffer = NULL;
+static float * z_buffer = NULL;
 
-int window_width = 800;
-int window_height = 600;
+static int window_width = 800;
+static int window_height = 600;
 
-bool use_fullscreen = false;
+static bool use_fullscreen = false;
+
+int get_window_width(void)
+{
+    return window_width;
+}
+
+int get_window_height(void)
+{
+    return window_height;
+}
 
 bool initialize_window(void)
 {
@@ -41,7 +51,6 @@ bool initialize_window(void)
         window_height,
         SDL_WINDOW_BORDERLESS
     );
-    // TODO 
     if (! window) {
         fprintf(stderr, "Error: SDL_CreateWindow() failed\n");
         return false;
@@ -56,6 +65,35 @@ bool initialize_window(void)
 
     if (use_fullscreen) {
         SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);
+    }
+
+    color_buffer = (uint32_t *)malloc(window_width * window_height * sizeof(uint32_t));
+    
+    if (!color_buffer) {
+        fprintf(stderr, "Error: malloc failed for color_buffer.\n");
+        return false;
+    }
+
+    z_buffer = (float *)malloc(window_width * window_height * sizeof(float));
+
+    if (!z_buffer) {
+        fprintf(stderr, "Error: malloc failed for z_buffer.\n");
+        return false;
+    }
+
+    // Create a texture buffer that displays the color buffer.
+    color_buffer_texture = SDL_CreateTexture(
+        renderer,
+        //SDL_PIXELFORMAT_ARGB8888,
+        SDL_PIXELFORMAT_RGBA32,
+        SDL_TEXTUREACCESS_STREAMING,
+        window_width,
+        window_height
+    );
+
+    if (! color_buffer_texture) {
+        fprintf(stderr, "Error: SDL_CreateTexture failed\n");
+        return false;
     }
 
     return true;
@@ -91,6 +129,26 @@ void clear_z_buffer(void)
     }
 }
 
+float get_zbuffer_at(int x, int y)
+{
+    float value = 1.0;
+
+    if (    (x >= 0) && (x < window_width)
+         && (y >= 0) && (y < window_height)) {
+            value = z_buffer[(window_width * y) + x];
+    }
+    return value;
+}
+
+void update_zbuffer_at(int x, int y, float value)
+{
+
+    if (    (x >= 0) && (x < window_width)
+         && (y >= 0) && (y < window_height)) {
+            z_buffer[(window_width * y) + x] = value;
+    }
+}
+
 void render_color_buffer(void)
 {
     SDL_UpdateTexture(
@@ -105,6 +163,8 @@ void render_color_buffer(void)
         NULL,
         NULL
     );
+
+    SDL_RenderPresent(renderer);
 }
 
 void draw_grid(void)
@@ -136,6 +196,16 @@ void destroy_window(void)
     }
     if (window) {
         SDL_DestroyWindow(window);
+    }
+
+    if (color_buffer) {
+        free(color_buffer);
+        color_buffer = NULL;
+    }
+
+    if (z_buffer) {
+        free(z_buffer);
+        z_buffer = NULL;
     }
 
     SDL_Quit();

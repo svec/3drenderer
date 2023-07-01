@@ -75,17 +75,17 @@ void draw_triangle_pixel(int x, int y, uint32_t color, vec4_t point_a, vec4_t po
     // and == 1.0 at the farthest away point from the camera.
     interpolated_reciprocal_w = 1.0 - interpolated_reciprocal_w;
 
-    int z_buffer_index = (window_width * y) + x;
-    if (z_buffer_index >= (window_height * window_width)) {
+    int z_buffer_index = (get_window_width() * y) + x;
+    if (z_buffer_index >= (get_window_height() * get_window_width())) {
         printf("ERROR: z_buffer_index is too big: %d, used x:%d y:%d\n", z_buffer_index, x, y);
     }
 
     // Only draw the pixel if it's in front of whatever is already in the z buffer.
-    if (interpolated_reciprocal_w < z_buffer[z_buffer_index]) {
+    if (interpolated_reciprocal_w < get_zbuffer_at(x, y)) {
         draw_pixel(x, y, color);
 
         // Update z buffer with the 1/w inverted depth value.
-        z_buffer[z_buffer_index] = interpolated_reciprocal_w;
+        update_zbuffer_at(x, y, interpolated_reciprocal_w);
     }
 
 }
@@ -261,8 +261,8 @@ void draw_texel(int x, int y, uint32_t * texture,
 
     uint32_t texture_array_index = (texture_width * texture_y) + texture_x;
 
-    int z_buffer_index = (window_width * y) + x;
-    if (z_buffer_index >= (window_height * window_width)) {
+    int z_buffer_index = (get_window_width() * y) + x;
+    if (z_buffer_index >= (get_window_height() * get_window_width())) {
         printf("ERROR: z_buffer_index is too big: %d, used x:%d y:%d\n", z_buffer_index, x, y);
     }
 
@@ -273,11 +273,11 @@ void draw_texel(int x, int y, uint32_t * texture,
     interpolated_reciprocal_w = 1.0 - interpolated_reciprocal_w;
 
     // Only draw the pixel if it's in front of whatever is already in the z buffer.
-    if (interpolated_reciprocal_w < z_buffer[z_buffer_index]) {
+    if (interpolated_reciprocal_w < get_zbuffer_at(x, y)) {
         draw_pixel(x, y, texture[texture_array_index]);
 
         // Update z buffer with the 1/w inverted depth value.
-        z_buffer[z_buffer_index] = interpolated_reciprocal_w;
+        update_zbuffer_at(x, y, interpolated_reciprocal_w);
     }
 }
 
