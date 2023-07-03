@@ -34,6 +34,10 @@ bool initialize_window(void)
     SDL_DisplayMode display_mode;
     SDL_GetCurrentDisplayMode(0, &display_mode);
 
+    // Note: I skipped the "Simulating Low-Resolution Displays" lecture because
+    // doing those changes created a bunch of errors like:
+    //   ERROR: z_buffer_index is too big: 2234303, used x:1727 y:1292
+    // which I didn't want to track down now.
     window_width = display_mode.w;
     window_height = display_mode.h;
 
