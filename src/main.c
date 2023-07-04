@@ -38,16 +38,16 @@ bool load_object_to_display(void)
 {
     //load_cube_mesh_data();
     //load_obj_file_data("./assets/cube.obj");
-    bool all_good = load_obj_file_data("./assets/cube.obj");
-    //bool all_good = load_obj_file_data("./assets/f22.obj");
+    //bool all_good = load_obj_file_data("./assets/cube.obj");
+    bool all_good = load_obj_file_data("./assets/f22.obj");
 
     if (! all_good) {
         fprintf(stderr, "Error: load_obj_file_data failed.\n");
         return false;
     }
 
-    all_good = load_png_texture_data("./assets/cube.png");
-    //all_good = load_png_texture_data("./assets/f22.png");
+    //all_good = load_png_texture_data("./assets/cube.png");
+    all_good = load_png_texture_data("./assets/f22.png");
 
     if (! all_good) {
         fprintf(stderr, "Error: load_png_texture_data failed.\n");
@@ -103,7 +103,7 @@ void process_input(void)
                 Pressing “5” displays textured triangles
                 Pressing “6” displays textured triangles and wireframe lines
                 Pressing “c” we should enable back-face culling
-                Pressing “d” we should disable the back-face culling
+                Pressing “x” we should disable the back-face culling
                 */
             if (event.key.keysym.sym == SDLK_ESCAPE)
             {
@@ -156,32 +156,31 @@ void process_input(void)
             {
                 g_display_back_face_culling = false;
             }
-
             if (event.key.keysym.sym == SDLK_UP)
             {
-                camera.position.y += 3.0 * delta_time_s;
+                update_camera_forward_velocity(vec3_mul(get_camera_direction(), 5.0 * delta_time_s));
+                update_camera_position(vec3_add(get_camera_position(), get_camera_forward_velocity()));
             }
             if (event.key.keysym.sym == SDLK_DOWN)
             {
-                camera.position.y -= 3.0 * delta_time_s;
-            }
-            if (event.key.keysym.sym == SDLK_a)
-            {
-                camera.yaw -= 1.0 * delta_time_s;
-            }
-            if (event.key.keysym.sym == SDLK_d)
-            {
-                camera.yaw += 1.0 * delta_time_s;
+                update_camera_forward_velocity(vec3_mul(get_camera_direction(), 5.0 * delta_time_s));
+                update_camera_position(vec3_sub(get_camera_position(), get_camera_forward_velocity()));
             }
             if (event.key.keysym.sym == SDLK_w)
             {
-                camera.forward_velocity = vec3_mul(camera.direction, 5.0 * delta_time_s);
-                camera.position = vec3_add(camera.position, camera.forward_velocity);
+                rotate_camera_pitch(+3.0 * delta_time_s);
             }
             if (event.key.keysym.sym == SDLK_s)
             {
-                camera.forward_velocity = vec3_mul(camera.direction, 5.0 * delta_time_s);
-                camera.position = vec3_sub(camera.position, camera.forward_velocity);
+                rotate_camera_pitch(-3.0 * delta_time_s);
+            }
+            if (event.key.keysym.sym == SDLK_RIGHT)
+            {
+                rotate_camera_yaw(+1.0 * delta_time_s);
+            }
+            if (event.key.keysym.sym == SDLK_LEFT)
+            {
+                rotate_camera_yaw(-1.0 * delta_time_s);
             }
             break;
         default:
@@ -221,27 +220,13 @@ void update(void)
     //mesh.translation.x += 0.1 * delta_time_s;
     //mesh.translation.y += 0.2 * delta_time_s;
 
-    // Change the camera position per camera frame.
-    //camera.position.x += 0.5 * delta_time_s;
-    //camera.position.y += 0.5 * delta_time_s;
-    //camera.position.z += 0.5 * delta_time_s;
-
     // Translate the vertex away from the camera.
     mesh.translation.z = 5.0; 
 
     // Create the view matrix using the current camera position and target.
-
-    // Initialize the target as the z axis direction.
-    vec3_t target = {0, 0, 1.0};
-
-    mat4_t camera_yaw_rotation = mat4_make_rotation_y(camera.yaw);
-    camera.direction = vec3_from_vec4(mat4_mul_vec4(camera_yaw_rotation, vec4_from_vec3(target)));
-
-    // Offset the camera position in the direction in which the camera is looking.
-    target = vec3_add(camera.position, camera.direction);
-
+    vec3_t target = get_camera_lookat_target();
     vec3_t up_direction = {0, 1, 0}; // normalized y axis
-    mat4_t view_matrix = mat4_look_at(camera.position, target, up_direction);
+    mat4_t view_matrix = mat4_look_at(get_camera_position(), target, up_direction);
 
     // Create scale, translation, and rotation matrices that will be used to multiply the mesh vertices.
     mat4_t scale_matrix = mat4_make_scale(mesh.scale.x, mesh.scale.y, mesh.scale.z);
