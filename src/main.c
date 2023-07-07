@@ -411,9 +411,15 @@ void update(void)
     {
         mesh_t *mesh = get_mesh(mesh_index);
 
-        // mesh->rotation.x += 0.6 * delta_time_s;
-        // mesh->rotation.y += 0.6 * delta_time_s;
-        // mesh->rotation.z += 0.6 * delta_time_s;
+        if (mesh_index == 1) {
+            mesh->rotation.x += 0.6 * delta_time_s;
+        }
+        else if (mesh_index == 2) {
+            mesh->rotation.y += 0.6 * delta_time_s;
+        }
+        else if (mesh_index == 3) {
+            mesh->rotation.z += 0.6 * delta_time_s;
+        }
 
         // mesh->scale.x += 0.02 * delta_time_s;
         // mesh->scale.y += 0.01 * delta_time_s;
