@@ -4,27 +4,25 @@
 
 #include "gfx-vector.h"
 #include "triangle.h"
-
-// 2x2x2 cube has 8 vertices
-#define N_CUBE_VERTICES (8)
-
-extern vec3_t cube_vertices[N_CUBE_VERTICES];
-
-// Each cube side has 2 triangles, 6 cube sides = 12 triangle faces
-#define N_CUBE_FACES (6 * 2)
-extern face_t cube_faces[N_CUBE_FACES];
+#include "upng.h"
 
 // This struct is a mesh, with dynamically sized vertices and faces,
 // as well as the rotation of this mesh.
 typedef struct {
     vec3_t * vertices;   // dynamic array of vertices for this mesh
     face_t * faces;      // dynamic array of faces for this mesh
+    upng_t * texture;    // PNG texture pointer
     vec3_t rotation;     // rotation of this mesh with x, y, z
     vec3_t scale;        // scale with x, y, z
     vec3_t translation;  // translation with x, y, z
 } mesh_t;
 
-extern mesh_t mesh;
+void free_meshes(void);
+int get_num_meshes(void);
+mesh_t * get_mesh(int index);
 
-void load_cube_mesh_data(void);
-bool load_obj_file_data(char * filename);
+bool load_mesh_obj_data(mesh_t * mesh, char * obj_filename);
+bool load_mesh_png_data(mesh_t * mesh, char * obj_filename);
+
+bool load_mesh(char * obj_filename, char * png_texture_filename,
+               vec3_t scale, vec3_t translation, vec3_t rotation);

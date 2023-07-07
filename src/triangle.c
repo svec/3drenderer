@@ -81,13 +81,13 @@ void draw_triangle_pixel(int x, int y, uint32_t color, vec4_t point_a, vec4_t po
     }
 
     // Only draw the pixel if it's in front of whatever is already in the z buffer.
-    if (interpolated_reciprocal_w < get_zbuffer_at(x, y)) {
+    if (interpolated_reciprocal_w < get_zbuffer_at(x, y))
+    {
         draw_pixel(x, y, color);
 
         // Update z buffer with the 1/w inverted depth value.
         update_zbuffer_at(x, y, interpolated_reciprocal_w);
     }
-
 }
 
 /* /////////////////////////////////////////////////////////////////////////////
@@ -98,20 +98,20 @@ void draw_triangle_pixel(int x, int y, uint32_t color, vec4_t point_a, vec4_t po
 ///////////////////////////////////////////////////////////////////////////////
 //
 //          (x0,y0)
-//            / \ 
-//           /   \ 
-//          /     \ 
-//         / flat- \ 
-//        / bottom  \ 
+//            / \
+//           /   \
+//          /     \
+//         / flat- \
+//        / bottom  \
 //   (x1,y1)------(Mx,My)   (this alg doesn't use the Mx,My midpoint explicitly)
-//       \_  flat-top \ 
-//          \_         \ 
-//             \_       \ 
-//                \_     \ 
-//                   \    \ 
-//                     \_  \ 
-//                        \_\ 
-//                           \ 
+//       \_  flat-top \
+//          \_         \
+//             \_       \
+//                \_     \
+//                   \    \
+//                     \_  \
+//                        \_\
+//                           \
 //                         (x2,y2)
 //
 /////////////////////////////////////////////////////////////////////////////// */
@@ -123,19 +123,22 @@ void draw_filled_triangle(int x0, int y0, float z0, float w0,
 {
     // First sort the triangle so that y0 < y1 < y2 (so y0 is at the top and y2 is at
     // the bottom of the triangle).
-    if (y0 > y1) {
+    if (y0 > y1)
+    {
         int_swap(&x0, &x1);
         int_swap(&y0, &y1);
         float_swap(&z0, &z1);
         float_swap(&w0, &w1);
     }
-    if (y1 > y2) {
+    if (y1 > y2)
+    {
         int_swap(&x1, &x2);
         int_swap(&y1, &y2);
         float_swap(&z1, &z2);
         float_swap(&w1, &w2);
     }
-    if (y0 > y1) {
+    if (y0 > y1)
+    {
         int_swap(&x0, &x1);
         int_swap(&y0, &y1);
         float_swap(&z0, &z1);
@@ -150,26 +153,32 @@ void draw_filled_triangle(int x0, int y0, float z0, float w0,
     float inverse_slope_1 = 0.0; // left leg of triangle
     float inverse_slope_2 = 0.0; // right leg of triangle
 
-    if ((y1 - y0) != 0) {
+    if ((y1 - y0) != 0)
+    {
         inverse_slope_1 = (float)(x1 - x0) / (y1 - y0);
     }
-    if ((y2 - y0) != 0) {
+    if ((y2 - y0) != 0)
+    {
         inverse_slope_2 = (float)(x2 - x0) / (y2 - y0);
     }
 
-    if ((y1 - y0) != 0) {
+    if ((y1 - y0) != 0)
+    {
 
-        for (int y = y0; y <= y1; y++) {
+        for (int y = y0; y <= y1; y++)
+        {
             int x_start = x1 + ((y - y1) * inverse_slope_1);
             int x_end = x0 + ((y - y0) * inverse_slope_2);
 
             // Depending on orientation of triangle, x_start and x_end may be on either side of each
             // other. Swap them so x_start is always on the left and x_end is always on the right.
-            if (x_end < x_start) {
+            if (x_end < x_start)
+            {
                 int_swap(&x_start, &x_end);
             }
 
-            for (int x = x_start; x < x_end; x++) {
+            for (int x = x_start; x < x_end; x++)
+            {
                 // Draw the pixel with the color that comes from the texture.
                 draw_triangle_pixel(x, y, color, point_a, point_b, point_c);
             }
@@ -180,26 +189,32 @@ void draw_filled_triangle(int x0, int y0, float z0, float w0,
     inverse_slope_1 = 0.0; // left leg of triangle
     inverse_slope_2 = 0.0; // right leg of triangle
 
-    if ((y2 - y1) != 0) {
+    if ((y2 - y1) != 0)
+    {
         inverse_slope_1 = (float)(x2 - x1) / (y2 - y1);
     }
-    if ((y2 - y0) != 0) {
+    if ((y2 - y0) != 0)
+    {
         inverse_slope_2 = (float)(x2 - x0) / (y2 - y0);
     }
 
-    if ((y2 - y1) != 0) {
+    if ((y2 - y1) != 0)
+    {
 
-        for (int y = y1; y <= y2; y++) {
+        for (int y = y1; y <= y2; y++)
+        {
             int x_start = x1 + ((y - y1) * inverse_slope_1);
             int x_end = x0 + ((y - y0) * inverse_slope_2);
 
             // Depending on orientation of triangle, x_start and x_end may be on either side of each
             // other. Swap them so x_start is always on the left and x_end is always on the right.
-            if (x_end < x_start) {
+            if (x_end < x_start)
+            {
                 int_swap(&x_start, &x_end);
             }
 
-            for (int x = x_start; x < x_end; x++) {
+            for (int x = x_start; x < x_end; x++)
+            {
                 // Draw the pixel with the color that comes from the texture.
                 draw_triangle_pixel(x, y, color, point_a, point_b, point_c);
             }
@@ -209,11 +224,11 @@ void draw_filled_triangle(int x0, int y0, float z0, float w0,
 
 // Function to draw the textured pixel at position (x,y) on screen, using interpolation
 // from 3 points of the triangle (points are a, b, and c).
-void draw_texel(int x, int y, uint32_t * texture,
+void draw_texel(int x, int y, upng_t *texture,
                 vec4_t point_a, vec4_t point_b, vec4_t point_c,
                 tex2_t a_uv, tex2_t b_uv, tex2_t c_uv)
 {
-    vec2_t p = { x, y };
+    vec2_t p = {x, y};
     vec2_t a = vec2_from_vec4(point_a);
     vec2_t b = vec2_from_vec4(point_b);
     vec2_t c = vec2_from_vec4(point_c);
@@ -249,12 +264,16 @@ void draw_texel(int x, int y, uint32_t * texture,
 
     // Map the interpolated u and v values to the right pixel in the texture.
     // We use the "% texture_width" and "% texture_height" at the end to clamp
-    // the values to be within the texture[] structure, which is 
+    // the values to be within the texture[] structure, which is
     // texture_width * texture_height large.
-	int texture_x = abs((int)(interpolated_u * texture_width)) % texture_width;
+    int texture_width = upng_get_width(texture);
+    int texture_height = upng_get_height(texture);
+
+    int texture_x = abs((int)(interpolated_u * texture_width)) % texture_width;
     int texture_y = abs((int)(interpolated_v * texture_height)) % texture_height;
 
-    if ((texture_x > texture_width) || (texture_y > texture_height)) {
+    if ((texture_x > texture_width) || (texture_y > texture_height))
+    {
         printf("ERROR: texture x or y too big: %d, %d\n", texture_x, texture_y);
         printf("       interpolated u, v: %f, %f\n", interpolated_u, interpolated_v);
     }
@@ -262,7 +281,8 @@ void draw_texel(int x, int y, uint32_t * texture,
     uint32_t texture_array_index = (texture_width * texture_y) + texture_x;
 
     int z_buffer_index = (get_window_width() * y) + x;
-    if (z_buffer_index >= (get_window_height() * get_window_width())) {
+    if (z_buffer_index >= (get_window_height() * get_window_width()))
+    {
         printf("ERROR: z_buffer_index is too big: %d, used x:%d y:%d\n", z_buffer_index, x, y);
     }
 
@@ -273,14 +293,15 @@ void draw_texel(int x, int y, uint32_t * texture,
     interpolated_reciprocal_w = 1.0 - interpolated_reciprocal_w;
 
     // Only draw the pixel if it's in front of whatever is already in the z buffer.
-    if (interpolated_reciprocal_w < get_zbuffer_at(x, y)) {
-        draw_pixel(x, y, texture[texture_array_index]);
+    if (interpolated_reciprocal_w < get_zbuffer_at(x, y))
+    {
+        uint32_t *texture_buffer = (uint32_t *)upng_get_buffer(texture);
+        draw_pixel(x, y, texture_buffer[texture_array_index]);
 
         // Update z buffer with the 1/w inverted depth value.
         update_zbuffer_at(x, y, interpolated_reciprocal_w);
     }
 }
-
 
 /* ////////////////////////////////////////////////////////////////////////////
 // Draw a textured triangle based on a texture array of colors.
@@ -306,7 +327,7 @@ void draw_texel(int x, int y, uint32_t * texture,
 void draw_textured_triangle(int x0, int y0, float z0, float w0, float u0, float v0, 
                             int x1, int y1, float z1, float w1, float u1, float v1,
                             int x2, int y2, float z2, float w2, float u2, float v2,
-                            uint32_t *texture)
+                            upng_t *texture)
 {
     // First sort the triangle so that y0 < y1 < y2 (so y0 is at the top and y2 is at
     // the bottom of the triangle).

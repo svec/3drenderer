@@ -8,13 +8,9 @@
 #include "mesh.h"
 #include "array.h"
 
-mesh_t mesh = {
-    .vertices = NULL,
-    .faces = NULL,
-    .rotation = {0, 0, 0},
-    .scale = {1.0, 1.0, 1.0},
-    .translation = {0, 0, 0},
-};
+#define MAX_NUM_MESHES (10)
+static mesh_t meshes[MAX_NUM_MESHES];
+static int mesh_count = 0;
 
 // Using left hand coordinate system
 //           +y  +z
@@ -26,125 +22,41 @@ mesh_t mesh = {
 //         / |
 //        /  |
 //
-/*
-    
-    p7: -1, 1, 1    --------------   p5: 1, 1, 1
-                  /              /|
-                 /              / |
-                /              /  |
-p2: -1, 1,-1   /--------------/   | p8: -1, -1, 1 in back left, can't see
-               |  p3: 1, 1, -1|   |
-               |              |   | p6: 1, -1, 1
-               |              |  /
-               |              | / 
-p1: -1,-1,-1   |--------------|/  p4: 1, -1, -1
 
-*/
-// Note that vertex numbers are 1-indexed, not 0-indexed.
-vec3_t cube_vertices[N_CUBE_VERTICES] = {
-    {.x = -1, .y = -1, .z = -1}, // p1
-    {.x = -1, .y =  1, .z = -1}, // p2
-    {.x =  1, .y =  1, .z = -1}, // p3
-    {.x =  1, .y = -1, .z = -1}, // p4
-    {.x =  1, .y =  1, .z =  1}, // p5
-    {.x =  1, .y = -1, .z =  1}, // p6
-    {.x = -1, .y =  1, .z =  1}, // p7
-    {.x = -1, .y = -1, .z =  1}, // p8
-};
-
-face_t cube_faces[N_CUBE_FACES] = {
-    // front
-    { .a = 1, .b = 2, .c = 3, .a_uv = { 0, 1 }, .b_uv = { 0, 0 }, .c_uv = { 1, 0 }, .color = 0xFFFFFFFF },
-    { .a = 1, .b = 3, .c = 4, .a_uv = { 0, 1 }, .b_uv = { 1, 0 }, .c_uv = { 1, 1 }, .color = 0xFFFFFFFF },
-    // right
-    { .a = 4, .b = 3, .c = 5, .a_uv = { 0, 1 }, .b_uv = { 0, 0 }, .c_uv = { 1, 0 }, .color = 0xFFFFFFFF },
-    { .a = 4, .b = 5, .c = 6, .a_uv = { 0, 1 }, .b_uv = { 1, 0 }, .c_uv = { 1, 1 }, .color = 0xFFFFFFFF },
-    // back
-    { .a = 6, .b = 5, .c = 7, .a_uv = { 0, 1 }, .b_uv = { 0, 0 }, .c_uv = { 1, 0 }, .color = 0xFFFFFFFF },
-    { .a = 6, .b = 7, .c = 8, .a_uv = { 0, 1 }, .b_uv = { 1, 0 }, .c_uv = { 1, 1 }, .color = 0xFFFFFFFF },
-    // left
-    { .a = 8, .b = 7, .c = 2, .a_uv = { 0, 1 }, .b_uv = { 0, 0 }, .c_uv = { 1, 0 }, .color = 0xFFFFFFFF },
-    { .a = 8, .b = 2, .c = 1, .a_uv = { 0, 1 }, .b_uv = { 1, 0 }, .c_uv = { 1, 1 }, .color = 0xFFFFFFFF },
-    // top
-    { .a = 2, .b = 7, .c = 5, .a_uv = { 0, 1 }, .b_uv = { 0, 0 }, .c_uv = { 1, 0 }, .color = 0xFFFFFFFF },
-    { .a = 2, .b = 5, .c = 3, .a_uv = { 0, 1 }, .b_uv = { 1, 0 }, .c_uv = { 1, 1 }, .color = 0xFFFFFFFF },
-    // bottom
-    { .a = 6, .b = 8, .c = 1, .a_uv = { 0, 1 }, .b_uv = { 0, 0 }, .c_uv = { 1, 0 }, .color = 0xFFFFFFFF },
-    { .a = 6, .b = 1, .c = 4, .a_uv = { 0, 1 }, .b_uv = { 1, 0 }, .c_uv = { 1, 1 }, .color = 0xFFFFFFFF }
-};
-
-#if 0 
-// From before we added textures (added UV coordinates to the cube faces)
-face_t cube_faces[N_CUBE_FACES] = {
-    // front face
-    {.a = 1, .b = 2, .c = 3, .color = 0xFFFFFFFF},
-    {.a = 1, .b = 3, .c = 4, .color = 0xFFFFFFFF},
-
-    // right face
-    {.a = 4, .b = 3, .c = 5, .color = 0xFFFFFFFF},
-    {.a = 4, .b = 5, .c = 6, .color = 0xFFFFFFFF},
-
-    // back face
-    {.a = 6, .b = 5, .c = 7, .color = 0xFFFFFFFF},
-    {.a = 6, .b = 7, .c = 8, .color = 0xFFFFFFFF},
-
-    // left face
-    {.a = 8, .b = 7, .c = 2, .color = 0xFFFFFFFF},
-    {.a = 8, .b = 2, .c = 1, .color = 0xFFFFFFFF},
-
-    // top face
-    {.a = 2, .b = 7, .c = 5, .color = 0xFFFFFFFF},
-    {.a = 2, .b = 5, .c = 3, .color = 0xFFFFFFFF},
-
-    // bottom face
-    {.a = 6, .b = 8, .c = 1, .color = 0xFFFFFFFF},
-    {.a = 6, .b = 1, .c = 4, .color = 0xFFFFFFFF},
-    #if 0
-    // front face
-    {.a = 1, .b = 2, .c = 3, .color = 0xFFFF0000},
-    {.a = 1, .b = 3, .c = 4, .color = 0xFFFF5500},
-
-    // right face
-    {.a = 4, .b = 3, .c = 5, .color = 0xFF00FF00},
-    {.a = 4, .b = 5, .c = 6, .color = 0xFF55FF00},
-
-    // back face
-    {.a = 6, .b = 5, .c = 7, .color = 0xFF0000FF},
-    {.a = 6, .b = 7, .c = 8, .color = 0xFF0055FF},
-
-    // left face
-    {.a = 8, .b = 7, .c = 2, .color = 0xFFFFFF00},
-    {.a = 8, .b = 2, .c = 1, .color = 0xFFFFFF55},
-
-    // top face
-    {.a = 2, .b = 7, .c = 5, .color = 0xFFFF00FF},
-    {.a = 2, .b = 5, .c = 3, .color = 0xFFFF55FF},
-
-    // bottom face
-    {.a = 6, .b = 8, .c = 1, .color = 0xFF00FFFF},
-    {.a = 6, .b = 1, .c = 4, .color = 0xFF55FFFF},
-    #endif
-
-};
-#endif
-
-void load_cube_mesh_data(void)
+void free_meshes(void)
 {
-    for (int ii=0; ii < N_CUBE_VERTICES; ii++) {
-        vec3_t cube_vertex = cube_vertices[ii];
-        array_push(mesh.vertices, cube_vertex);
-    }
-    for (int ii=0; ii < N_CUBE_FACES; ii++) {
-        face_t cube_face = cube_faces[ii];
-        array_push(mesh.faces, cube_face);
+    for (int mesh_index = 0; mesh_index < mesh_count; mesh_index++) {
+        array_free(meshes[mesh_index].faces);
+        array_free(meshes[mesh_index].vertices);
+
+        if (meshes[mesh_index].texture)
+        {
+            upng_free(meshes[mesh_index].texture);
+        }
     }
 }
 
-bool load_obj_file_data(char * filename)
+int get_num_meshes(void)
 {
-    FILE * fp = fopen(filename, "r");
+    return mesh_count;
+}
+
+mesh_t * get_mesh(int index)
+{
+    mesh_t * ret = NULL;
+
+    if ((index >= 0) && (index < mesh_count)) {
+        ret =  &(meshes[index]);
+    }
+
+    return ret;
+}
+
+bool load_mesh_obj_data(mesh_t *mesh, char * obj_filename)
+{
+    FILE * fp = fopen(obj_filename, "r");
     if (fp == NULL) {
-        fprintf(stderr, "Error opening obj file: %s\n", filename);
+        fprintf(stderr, "Error opening obj file: %s\n", obj_filename);
         return false;
     }
 
@@ -179,7 +91,7 @@ bool load_obj_file_data(char * filename)
                 all_good = false;
                 break;
             }
-            array_push(mesh.vertices, vertex);
+            array_push(mesh->vertices, vertex);
         } else if (strncmp(line, "vt ", 3) == 0) {
             // Texture coordinate info.
             texture_num++;
@@ -229,7 +141,7 @@ bool load_obj_file_data(char * filename)
                 .c_uv = texcoords[texture_indices[2] - 1],
                 .color = 0xFFFFFFFF
             };
-            array_push(mesh.faces, face);
+            array_push(mesh->faces, face);
         }
     }
 
@@ -244,4 +156,55 @@ bool load_obj_file_data(char * filename)
     }
 
     return all_good;
+}
+
+bool load_mesh_png_data(mesh_t * mesh, char * png_filename)
+{
+    bool all_good = false;
+
+    upng_t * png_image = upng_new_from_file(png_filename);
+
+    if (png_image != NULL) {
+        upng_decode(png_image);
+        upng_error error = upng_get_error(png_image);
+        fprintf(stderr, "upng_get_error returned: %d\n", error);
+        if (error == UPNG_EOK) {
+            mesh->texture = png_image;
+            all_good = true;
+        }
+    }
+
+    return all_good;
+}
+
+bool load_mesh(char * obj_filename, char * png_texture_filename,
+               vec3_t scale, vec3_t translation, vec3_t rotation)
+{
+    if (mesh_count >= MAX_NUM_MESHES) {
+        fprintf(stderr, "ERROR: too many meshes, can only have %d\n", MAX_NUM_MESHES);
+        return false;
+    }
+
+    mesh_t * new_mesh = &(meshes[mesh_count]);
+
+    bool all_good = load_mesh_obj_data(new_mesh, obj_filename);
+    if (! all_good) {
+        fprintf(stderr, "Error: load_mesh_obj_data failed on filename: %s\n", obj_filename);
+        return false;
+    }
+
+    all_good = load_mesh_png_data(new_mesh, png_texture_filename);
+
+    if (! all_good) {
+        fprintf(stderr, "Error: load_mesh_png_data failed on filename: %s\n", png_texture_filename);
+        return false;
+    }
+
+    new_mesh->scale = scale;
+    new_mesh->translation = translation;
+    new_mesh->rotation = rotation;
+
+    mesh_count++;
+
+    return true;
 }
