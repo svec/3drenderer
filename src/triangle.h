@@ -24,6 +24,8 @@ typedef struct {
     upng_t * texture;
 } triangle_t;
 
+vec3_t get_triangle_normal(vec4_t vertices[3]);
+
 void draw_filled_triangle(int x0, int y0, float z0, float w0,
                           int x1, int y1, float z1, float w1,
                           int x2, int x3, float z2, float w2,

@@ -77,7 +77,7 @@ void draw_triangle_pixel(int x, int y, uint32_t color, vec4_t point_a, vec4_t po
 
     int z_buffer_index = (get_window_width() * y) + x;
     if (z_buffer_index >= (get_window_height() * get_window_width())) {
-        printf("ERROR: z_buffer_index is too big: %d, used x:%d y:%d\n", z_buffer_index, x, y);
+        //printf("ERROR: z_buffer_index is too big: %d, used x:%d y:%d\n", z_buffer_index, x, y);
     }
 
     // Only draw the pixel if it's in front of whatever is already in the z buffer.
@@ -283,7 +283,7 @@ void draw_texel(int x, int y, upng_t *texture,
     int z_buffer_index = (get_window_width() * y) + x;
     if (z_buffer_index >= (get_window_height() * get_window_width()))
     {
-        printf("ERROR: z_buffer_index is too big: %d, used x:%d y:%d\n", z_buffer_index, x, y);
+        //printf("ERROR: z_buffer_index is too big: %d, used x:%d y:%d\n", z_buffer_index, x, y);
     }
 
     // Adjust 1/w so the pixels that are closer to the camera have smaller values than
@@ -438,4 +438,26 @@ void draw_textured_triangle(int x0, int y0, float z0, float w0, float u0, float 
             }
         }
     }
+}
+
+vec3_t get_triangle_normal(vec4_t vertices[3])
+{
+    // Backface culling.
+    // Remember that triangles are "clockwise", going A-B-C.
+    // Also remember that we use a left-handed axis system, so z gets larger
+    // going "into" the screen away from the viewer.
+    vec3_t vector_a = vec3_from_vec4(vertices[0]); /*     A     */
+    vec3_t vector_b = vec3_from_vec4(vertices[1]); /*    / \    */
+    vec3_t vector_c = vec3_from_vec4(vertices[2]); /*   C---B   */
+
+    vec3_t vector_ab = vec3_sub(vector_b, vector_a); // Vector AB
+    vec3_t vector_ac = vec3_sub(vector_c, vector_a); // Vector AC
+    vec3_normalize(&vector_ab);
+    vec3_normalize(&vector_ac);
+
+    // Compute the face normal using the cross product to find a perpendicular line to the face.
+    vec3_t normal = vec3_cross(vector_ab, vector_ac);
+    vec3_normalize(&normal);
+
+    return normal;
 }
